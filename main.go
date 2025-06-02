@@ -5,21 +5,20 @@ import (
 	"log"
 	"net/http"
 
-	"awesomeProject/db"
 	"awesomeProject/handlers"
 	"awesomeProject/store"
 )
 
 func main() {
 	// Initialize database connection
-	database, err := db.InitDB()
-	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
-	}
-	defer database.Close()
+	//database, err := db.InitDB()
+	//if err != nil {
+	//	log.Fatalf("Failed to initialize database: %v", err)
+	//}
+	//defer database.Close()
 
 	// Create store instance
-	itemStore := store.NewScheduledItemStore(database)
+	itemStore := store.NewMemoryScheduledItemStore()
 
 	// Add sample data if needed
 	itemStore.AddSampleData()

@@ -10,11 +10,11 @@ import (
 
 // ScheduledItemHandler handles HTTP requests for scheduled items
 type ScheduledItemHandler struct {
-	store *store.ScheduledItemStore
+	store store.ScheduledItemStore
 }
 
 // NewScheduledItemHandler creates a new handler with the given store
-func NewScheduledItemHandler(store *store.ScheduledItemStore) *ScheduledItemHandler {
+func NewScheduledItemHandler(store store.ScheduledItemStore) *ScheduledItemHandler {
 	return &ScheduledItemHandler{
 		store: store,
 	}
