@@ -8,21 +8,21 @@ import (
 	"time"
 )
 
-// ScheduledItemStore provides storage operations for scheduled items
-type ScheduledItemStore struct {
+// PostgresScheduledItemStore provides PostgreSQL storage operations for scheduled items
+type PostgresScheduledItemStore struct {
 	sync.RWMutex
 	db *sql.DB
 }
 
-// NewScheduledItemStore creates a new store with the given database connection
-func NewScheduledItemStore(db *sql.DB) *ScheduledItemStore {
-	return &ScheduledItemStore{
+// NewPostgresScheduledItemStore creates a new PostgreSQL store with the given database connection
+func NewPostgresScheduledItemStore(db *sql.DB) *PostgresScheduledItemStore {
+	return &PostgresScheduledItemStore{
 		db: db,
 	}
 }
 
 // CreateScheduledItem adds a new scheduled item to the database
-func (s *ScheduledItemStore) CreateScheduledItem(item models.ScheduledItem) models.ScheduledItem {
+func (s *PostgresScheduledItemStore) CreateScheduledItem(item models.ScheduledItem) models.ScheduledItem {
 	s.Lock()
 	defer s.Unlock()
 
@@ -52,7 +52,7 @@ func (s *ScheduledItemStore) CreateScheduledItem(item models.ScheduledItem) mode
 }
 
 // GetScheduledItem retrieves a scheduled item by ID from the database
-func (s *ScheduledItemStore) GetScheduledItem(id int64) (models.ScheduledItem, bool) {
+func (s *PostgresScheduledItemStore) GetScheduledItem(id int64) (models.ScheduledItem, bool) {
 	s.RLock()
 	defer s.RUnlock()
 
@@ -96,7 +96,7 @@ func (s *ScheduledItemStore) GetScheduledItem(id int64) (models.ScheduledItem, b
 }
 
 // GetAllScheduledItems returns all scheduled items from the database
-func (s *ScheduledItemStore) GetAllScheduledItems() []models.ScheduledItem {
+func (s *PostgresScheduledItemStore) GetAllScheduledItems() []models.ScheduledItem {
 	s.RLock()
 	defer s.RUnlock()
 
@@ -152,7 +152,7 @@ func (s *ScheduledItemStore) GetAllScheduledItems() []models.ScheduledItem {
 }
 
 // UpdateScheduledItem updates an existing scheduled item in the database
-func (s *ScheduledItemStore) UpdateScheduledItem(id int64, updatedItem models.ScheduledItem) (models.ScheduledItem, bool) {
+func (s *PostgresScheduledItemStore) UpdateScheduledItem(id int64, updatedItem models.ScheduledItem) (models.ScheduledItem, bool) {
 	s.Lock()
 	defer s.Unlock()
 
@@ -193,7 +193,7 @@ func (s *ScheduledItemStore) UpdateScheduledItem(id int64, updatedItem models.Sc
 }
 
 // DeleteScheduledItem removes a scheduled item from the database
-func (s *ScheduledItemStore) DeleteScheduledItem(id int64) bool {
+func (s *PostgresScheduledItemStore) DeleteScheduledItem(id int64) bool {
 	s.Lock()
 	defer s.Unlock()
 
@@ -214,7 +214,7 @@ func (s *ScheduledItemStore) DeleteScheduledItem(id int64) bool {
 }
 
 // AddSampleData adds sample data to the database if it's empty
-func (s *ScheduledItemStore) AddSampleData() {
+func (s *PostgresScheduledItemStore) AddSampleData() {
 	count := 0
 	err := s.db.QueryRow("SELECT COUNT(*) FROM scheduled_items").Scan(&count)
 	if err != nil {
