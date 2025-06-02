@@ -4,21 +4,36 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 
+	"awesomeProject/db"
 	"awesomeProject/handlers"
 	"awesomeProject/store"
 )
 
 func main() {
-	// Initialize database connection
-	//database, err := db.InitDB()
-	//if err != nil {
-	//	log.Fatalf("Failed to initialize database: %v", err)
-	//}
-	//defer database.Close()
+	var itemStore store.ScheduledItemStore
 
-	// Create store instance
-	itemStore := store.NewMemoryScheduledItemStore()
+	// Check environment variable to determine which store to use
+	usePostgres := os.Getenv("USE_POSTGRES_DB")
+	
+	if strings.ToLower(usePostgres) == "true" {
+		// Initialize database connection for PostgreSQL
+		database, err := db.InitDB()
+		if err != nil {
+			log.Fatalf("Failed to initialize database: %v", err)
+		}
+		defer database.Close()
+		
+		// Create PostgreSQL store instance
+		itemStore = store.NewPostgresScheduledItemStore(database)
+		log.Println("Using PostgreSQL database for storage")
+	} else {
+		// Create in-memory store instance
+		itemStore = store.NewMemoryScheduledItemStore()
+		log.Println("Using in-memory database for storage")
+	}
 
 	// Add sample data if needed
 	itemStore.AddSampleData()
