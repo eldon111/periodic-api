@@ -6,11 +6,18 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"awesomeProject/db"
 	"awesomeProject/handlers"
 	"awesomeProject/store"
 )
+
+func init() {
+	// Set the application's default timezone to UTC
+	// This ensures all time operations default to UTC
+	time.Local = time.UTC
+}
 
 func main() {
 	var itemStore store.ScheduledItemStore

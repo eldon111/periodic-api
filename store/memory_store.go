@@ -9,8 +9,8 @@ import (
 // MemoryScheduledItemStore provides in-memory storage operations for scheduled items
 type MemoryScheduledItemStore struct {
 	sync.RWMutex
-	items     map[int64]models.ScheduledItem
-	nextID    int64
+	items  map[int64]models.ScheduledItem
+	nextID int64
 }
 
 // NewMemoryScheduledItemStore creates a new in-memory store
@@ -95,7 +95,7 @@ func (s *MemoryScheduledItemStore) AddSampleData() {
 			Repeats:     false,
 		})
 
-		cronExpr := "0 0 9 * * MON-FRI"
+		cronExpr := "0 9 * * MON-FRI"
 		startsAt2, _ := time.Parse(time.RFC3339, "2023-05-16T14:30:00Z")
 		expirationTime, _ := time.Parse(time.RFC3339, "2023-12-31T23:59:59Z")
 		s.CreateScheduledItem(models.ScheduledItem{
