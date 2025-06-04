@@ -24,7 +24,7 @@ func main() {
 
 	// Check environment variable to determine which store to use
 	usePostgres := os.Getenv("USE_POSTGRES_DB")
-	
+
 	if strings.ToLower(usePostgres) == "true" {
 		// Initialize database connection for PostgreSQL
 		database, err := db.InitDB()
@@ -32,7 +32,7 @@ func main() {
 			log.Fatalf("Failed to initialize database: %v", err)
 		}
 		defer database.Close()
-		
+
 		// Create PostgreSQL store instance
 		itemStore = store.NewPostgresScheduledItemStore(database)
 		log.Println("Using PostgreSQL database for storage")

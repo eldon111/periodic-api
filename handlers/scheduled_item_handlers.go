@@ -25,7 +25,7 @@ func NewScheduledItemHandler(store store.ScheduledItemStore) *ScheduledItemHandl
 		// Log error but don't fail - the endpoint will return errors if AWS is not configured
 		awsClient = nil
 	}
-	
+
 	return &ScheduledItemHandler{
 		store:     store,
 		awsClient: awsClient,
