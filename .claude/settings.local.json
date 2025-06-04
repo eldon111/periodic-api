@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(go get:*)"
+      "Bash(go get:*)",
+      "Bash(git add:*)",
+      "Bash(find:*)",
+      "Bash(for file in ./aws_config.json ./CLAUDE.md ./db/db.go ./handlers/scheduled_item_handlers.go ./main.go ./models/scheduled_item.go ./new_scheduled_item_system_prompt.txt ./README.md ./store/memory_store.go ./store/scheduled_item_store.go ./store/store_interface.go ./test_api.bat ./test_generate_api.bat ./utils/aws_client.go)",
+      "Bash(do echo \"Converting $file\")",
+      "Bash(sed:*)",
+      "Bash(done)"
     ],
     "deny": []
   }

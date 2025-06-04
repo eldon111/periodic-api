@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -33,6 +34,8 @@ func NewAWSLLMClient(ctx context.Context) (*AWSLLMClient, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}
+
+	log.Printf("AWS Config loaded - Region: %s, AccessKeyID: %s", awsConfig.Region, awsConfig.AccessKeyID[:8]+"...")
 
 	// Create AWS config with custom credentials
 	cfg, err := config.LoadDefaultConfig(ctx,
@@ -100,26 +103,40 @@ func (c *AWSLLMClient) GenerateScheduledItemJSON(ctx context.Context, userPrompt
 	// Use the loaded system prompt
 	fullPrompt := fmt.Sprintf("%s\n\nUser request: %s", c.systemPrompt, userPrompt)
 
-	// Prepare the request body for Claude model
+	// Prepare the request body for Nova model
 	requestBody := map[string]interface{}{
-		"anthropic_version": "bedrock-2023-05-31",
-		"max_tokens":        1000,
 		"messages": []map[string]interface{}{
 			{
-				"role":    "user",
-				"content": fullPrompt,
+				"role": "user",
+				"content": []map[string]interface{}{
+					{
+						"text": fullPrompt,
+					},
+				},
 			},
 		},
+		"inferenceConfig": map[string]interface{}{
+			"max_tokens":  512,
+			"temperature": 0.0,
+			"top_p":       0.0,
+			"top_k":       20,
+		},
 	}
+
+	log.Printf("Request body: %+v", requestBody)
 
 	bodyBytes, err := json.Marshal(requestBody)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
-	// Call Bedrock with Nova model
+	// Call Bedrock with Nova model using inference profile
+	// The inference profile should match the region from config
+	modelId := fmt.Sprintf("us.amazon.nova-lite-v1:0")
+	log.Printf("Using model ID: %s", modelId)
+
 	input := &bedrockruntime.InvokeModelInput{
-		ModelId:     aws.String("amazon.nova-lite-v1:0"),
+		ModelId:     aws.String(modelId),
 		ContentType: aws.String("application/json"),
 		Accept:      aws.String("application/json"),
 		Body:        bodyBytes,
@@ -136,10 +153,22 @@ func (c *AWSLLMClient) GenerateScheduledItemJSON(ctx context.Context, userPrompt
 		return "", fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
-	// Extract the generated text
-	content, ok := response["content"].([]interface{})
+	log.Printf("Response: %+v", response)
+
+	// Extract the generated text for Nova model response format
+	output, ok := response["output"].(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("unexpected response format - no output field")
+	}
+
+	message, ok := output["message"].(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("unexpected response format - no message field")
+	}
+
+	content, ok := message["content"].([]interface{})
 	if !ok || len(content) == 0 {
-		return "", fmt.Errorf("unexpected response format")
+		return "", fmt.Errorf("unexpected response format - no content array")
 	}
 
 	textContent, ok := content[0].(map[string]interface{})
