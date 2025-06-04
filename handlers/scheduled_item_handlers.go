@@ -3,20 +3,32 @@ package handlers
 import (
 	"awesomeProject/models"
 	"awesomeProject/store"
+	"awesomeProject/utils"
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // ScheduledItemHandler handles HTTP requests for scheduled items
 type ScheduledItemHandler struct {
-	store store.ScheduledItemStore
+	store     store.ScheduledItemStore
+	awsClient *utils.AWSLLMClient
 }
 
 // NewScheduledItemHandler creates a new handler with the given store
 func NewScheduledItemHandler(store store.ScheduledItemStore) *ScheduledItemHandler {
+	// Initialize AWS client
+	awsClient, err := utils.NewAWSLLMClient(context.Background())
+	if err != nil {
+		// Log error but don't fail - the endpoint will return errors if AWS is not configured
+		awsClient = nil
+	}
+	
 	return &ScheduledItemHandler{
-		store: store,
+		store:     store,
+		awsClient: awsClient,
 	}
 }
 
@@ -129,6 +141,56 @@ func (h *ScheduledItemHandler) HandleDeleteScheduledItem(w http.ResponseWriter, 
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// GeneratePromptRequest represents the request body for generating scheduled items
+type GeneratePromptRequest struct {
+	Prompt string `json:"prompt"`
+}
+
+// HandleGenerateScheduledItem handles POST requests to generate a scheduled item from a prompt
+func (h *ScheduledItemHandler) HandleGenerateScheduledItem(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Check if AWS client is available
+	if h.awsClient == nil {
+		http.Error(w, "AWS LLM service not available", http.StatusServiceUnavailable)
+		return
+	}
+
+	// Parse request body
+	var req GeneratePromptRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if strings.TrimSpace(req.Prompt) == "" {
+		http.Error(w, "Prompt cannot be empty", http.StatusBadRequest)
+		return
+	}
+
+	// Generate JSON from AWS LLM
+	generatedJSON, err := h.awsClient.GenerateScheduledItemJSON(r.Context(), req.Prompt)
+	if err != nil {
+		http.Error(w, "Failed to generate scheduled item: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Validate and parse the generated JSON into ScheduledItem
+	var scheduledItem models.ScheduledItem
+	if err := json.Unmarshal([]byte(generatedJSON), &scheduledItem); err != nil {
+		http.Error(w, "Generated invalid JSON format: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Return the generated ScheduledItem as JSON (without storing it)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(scheduledItem)
+}
+
 // SetupRoutes configures the HTTP routes for scheduled items
 func (h *ScheduledItemHandler) SetupRoutes() {
 	// ScheduledItem collection endpoints
@@ -142,6 +204,9 @@ func (h *ScheduledItemHandler) SetupRoutes() {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
+
+	// Generate scheduled item from prompt
+	http.HandleFunc("/generate-scheduled-item", h.HandleGenerateScheduledItem)
 
 	// ScheduledItem instance endpoints
 	http.HandleFunc("/scheduled-items/", func(w http.ResponseWriter, r *http.Request) {
