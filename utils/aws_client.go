@@ -68,9 +68,9 @@ func (c *AWSLLMClient) GenerateScheduledItemJSON(ctx context.Context, userPrompt
 		return "", fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
-	// Call Bedrock with Claude model
+	// Call Bedrock with Nova model
 	input := &bedrockruntime.InvokeModelInput{
-		ModelId:     aws.String("anthropic.claude-3-haiku-20240307-v1:0"),
+		ModelId:     aws.String("amazon.nova-lite-v1:0"),
 		ContentType: aws.String("application/json"),
 		Accept:      aws.String("application/json"),
 		Body:        bodyBytes,
