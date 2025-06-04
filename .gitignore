@@ -1,2 +1,5 @@
 .aider*
 /.idea/AugmentWebviewStateStore.xml
+
+# AWS credentials - do not commit
+aws_config.json

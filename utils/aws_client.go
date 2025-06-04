@@ -8,8 +8,17 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
 )
+
+// AWSConfig represents the AWS configuration loaded from file
+type AWSConfig struct {
+	AccessKeyID     string `json:"accessKeyId"`
+	SecretAccessKey string `json:"secretAccessKey"`
+	Region          string `json:"region"`
+	SessionToken    string `json:"sessionToken"`
+}
 
 // AWSLLMClient handles interactions with AWS Bedrock LLM
 type AWSLLMClient struct {
@@ -19,7 +28,21 @@ type AWSLLMClient struct {
 
 // NewAWSLLMClient creates a new AWS LLM client
 func NewAWSLLMClient(ctx context.Context) (*AWSLLMClient, error) {
-	cfg, err := config.LoadDefaultConfig(ctx)
+	// Load AWS configuration from file
+	awsConfig, err := loadAWSConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load AWS config: %w", err)
+	}
+
+	// Create AWS config with custom credentials
+	cfg, err := config.LoadDefaultConfig(ctx,
+		config.WithRegion(awsConfig.Region),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+			awsConfig.AccessKeyID,
+			awsConfig.SecretAccessKey,
+			awsConfig.SessionToken,
+		)),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS config: %w", err)
 	}
@@ -35,6 +58,32 @@ func NewAWSLLMClient(ctx context.Context) (*AWSLLMClient, error) {
 		client:       client,
 		systemPrompt: systemPrompt,
 	}, nil
+}
+
+// loadAWSConfig reads the AWS configuration from the external file
+func loadAWSConfig() (*AWSConfig, error) {
+	content, err := os.ReadFile("aws_config.json")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read AWS awsConfig file: %w", err)
+	}
+
+	var awsConfig AWSConfig
+	if err := json.Unmarshal(content, &awsConfig); err != nil {
+		return nil, fmt.Errorf("failed to parse AWS awsConfig: %w", err)
+	}
+
+	// Validate required fields
+	if awsConfig.AccessKeyID == "" || awsConfig.AccessKeyID == "YOUR_AWS_ACCESS_KEY_ID" {
+		return nil, fmt.Errorf("AWS Access Key ID not configured")
+	}
+	if awsConfig.SecretAccessKey == "" || awsConfig.SecretAccessKey == "YOUR_AWS_SECRET_ACCESS_KEY" {
+		return nil, fmt.Errorf("AWS Secret Access Key not configured")
+	}
+	if awsConfig.Region == "" {
+		return nil, fmt.Errorf("AWS Region not configured")
+	}
+
+	return &awsConfig, nil
 }
 
 // loadSystemPrompt reads the system prompt from the external file
