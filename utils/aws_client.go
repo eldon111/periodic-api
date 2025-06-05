@@ -132,7 +132,6 @@ func (c *AWSLLMClient) GenerateScheduledItemJSON(ctx context.Context, userPrompt
 			},
 		},
 		"inferenceConfig": map[string]interface{}{
-			"max_tokens":  512,
 			"temperature": 0.0,
 			"top_p":       0.0,
 			"top_k":       20,
