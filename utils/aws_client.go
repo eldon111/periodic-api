@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -99,9 +100,24 @@ func loadSystemPrompt() (string, error) {
 }
 
 // GenerateScheduledItemJSON sends a prompt to AWS LLM and returns JSON response
-func (c *AWSLLMClient) GenerateScheduledItemJSON(ctx context.Context, userPrompt string) (string, error) {
-	// Use the loaded system prompt
-	fullPrompt := fmt.Sprintf("%s\n\nUser request: %s", c.systemPrompt, userPrompt)
+func (c *AWSLLMClient) GenerateScheduledItemJSON(ctx context.Context, userPrompt string, userTimezone string) (string, error) {
+	// Validate and load the user's timezone
+	location, err := time.LoadLocation(userTimezone)
+	if err != nil {
+		return "", fmt.Errorf("invalid timezone '%s': %w", userTimezone, err)
+	}
+
+	// Get current time in user's timezone
+	currentTime := time.Now()
+	currentTimeInUserTZ := currentTime.In(location)
+	formatter := "2006-01-02 15:04:05"
+	currentDateTime := currentTimeInUserTZ.Format(formatter)
+
+	// Build additional context
+	additionalContext := fmt.Sprintf("Additional context:\n User's timezone: %s,\n User's current date and time: %s", userTimezone, currentDateTime)
+
+	// Use the loaded system prompt with additional context
+	fullPrompt := fmt.Sprintf("%s\n\n%s\n\nUser request: %s", c.systemPrompt, additionalContext, userPrompt)
 
 	// Prepare the request body for Nova model
 	requestBody := map[string]interface{}{

@@ -143,7 +143,8 @@ func (h *ScheduledItemHandler) HandleDeleteScheduledItem(w http.ResponseWriter, 
 
 // GeneratePromptRequest represents the request body for generating scheduled items
 type GeneratePromptRequest struct {
-	Prompt string `json:"prompt"`
+	Prompt   string `json:"prompt"`
+	Timezone string `json:"timezone"`
 }
 
 // HandleGenerateScheduledItem handles POST requests to generate a scheduled item from a prompt
@@ -171,8 +172,13 @@ func (h *ScheduledItemHandler) HandleGenerateScheduledItem(w http.ResponseWriter
 		return
 	}
 
+	if strings.TrimSpace(req.Timezone) == "" {
+		http.Error(w, "Timezone is required", http.StatusBadRequest)
+		return
+	}
+
 	// Generate JSON from AWS LLM
-	generatedJSON, err := h.awsClient.GenerateScheduledItemJSON(r.Context(), req.Prompt)
+	generatedJSON, err := h.awsClient.GenerateScheduledItemJSON(r.Context(), req.Prompt, req.Timezone)
 	if err != nil {
 		http.Error(w, "Failed to generate scheduled item: "+err.Error(), http.StatusInternalServerError)
 		return
