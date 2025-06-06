@@ -15,8 +15,23 @@ go run main.go
 
 ### Testing the API
 ```bash
-./test_api.bat
-./test_generate_api.bat
+./scripts/test_api.sh
+./scripts/test_generate_api.sh
+```
+
+### Integration Testing
+```bash
+# Smart runner (auto-detects best option)
+./scripts/test_integration_smart.sh
+
+# Testcontainers (recommended - uses throwaway Docker containers)
+./scripts/test_integration_testcontainers.sh
+
+# Docker Compose approach
+./scripts/test_integration_docker.sh
+
+# Local PostgreSQL approach
+./scripts/test_integration.sh
 ```
 
 ### Build
