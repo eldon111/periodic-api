@@ -3,6 +3,7 @@
     "allow": [
       "Bash(go get:*)",
       "Bash(git add:*)",
+      "Bash(echo:*)",
       "Bash(find:*)",
       "Bash(sed:*)",
       "Bash(done)",
@@ -13,9 +14,11 @@
       "Bash(rm:*)",
       "Bash(grep:*)",
       "Bash(ls:*)",
-      "Bash(USE_TESTCONTAINERS=true)",
+      "Bash(USE_TESTCONTAINERS=true:*)",
       "Bash(go clean:*)",
-      "Bash(go test:*)"
+      "Bash(go test:*)",
+      "Bash(./scripts:*)",
+      "Bash(true)"
     ],
     "deny": []
   }

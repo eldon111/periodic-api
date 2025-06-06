@@ -13,7 +13,7 @@ services:
       - "5433:5432"  # Use different port to avoid conflicts
     volumes:
       - test_postgres_data:/var/lib/postgresql/data
-      - ./init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql
+      - ../db_init.sql:/docker-entrypoint-initdb.d/db_init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U testuser -d test_db"]
       interval: 5s
