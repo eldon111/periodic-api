@@ -1,7 +1,7 @@
 package store
 
 import (
-	"awesomeProject/models"
+	"awesomeProject/internal/models"
 	"database/sql"
 	"fmt"
 	"log"
@@ -106,7 +106,7 @@ func TestScheduledItemStore_CRUD(t *testing.T) {
 
 	// Test scheduled item
 	now := time.Now()
-	cronExpr := "0 0 * * *" // Run at midnight every day
+	cronExpr := "0 0 * * *"            // Run at midnight every day
 	expiration := now.AddDate(0, 1, 0) // 1 month from now
 
 	testItem := models.ScheduledItem{
@@ -184,8 +184,8 @@ func TestScheduledItemStore_CRUD(t *testing.T) {
 		updatedTitle := "Updated Test Item"
 		updatedDescription := "This is an updated test scheduled item"
 		updatedStartsAt := now.Add(time.Hour * 24) // 1 day later
-		updatedCronExpr := "0 12 * * *" // Run at noon every day
-		updatedExpiration := now.AddDate(0, 2, 0) // 2 months from now
+		updatedCronExpr := "0 12 * * *"            // Run at noon every day
+		updatedExpiration := now.AddDate(0, 2, 0)  // 2 months from now
 
 		updatedItem := models.ScheduledItem{
 			Title:          updatedTitle,

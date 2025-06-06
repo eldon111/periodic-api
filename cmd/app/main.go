@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"awesomeProject/db"
-	"awesomeProject/handlers"
-	"awesomeProject/store"
+	"awesomeProject/internal/db"
+	"awesomeProject/internal/handlers"
+	"awesomeProject/internal/store"
 )
 
 func init() {

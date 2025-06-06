@@ -1,7 +1,7 @@
 package store
 
 import (
-	"awesomeProject/models"
+	"awesomeProject/internal/models"
 	"database/sql"
 	"fmt"
 	"log"
@@ -19,13 +19,13 @@ func setupTodoItemDBForTest(t *testing.T) {
 	if testTodoItemDB != nil {
 		return
 	}
-	
+
 	var err error
 	testTodoItemDB, err = setupTodoItemTestDB()
 	if err != nil {
 		t.Fatalf("Failed to set up test database: %v", err)
 	}
-	
+
 	// Register cleanup function
 	t.Cleanup(func() {
 		cleanupTodoItemTestDB(testTodoItemDB)
@@ -90,7 +90,7 @@ func cleanupTodoItemTestDB(db *sql.DB) {
 func TestTodoItemStore_CRUD(t *testing.T) {
 	// Set up the test database
 	setupTodoItemDBForTest(t)
-	
+
 	// Skip the test if the database connection is not available
 	if testTodoItemDB == nil {
 		t.Skip("Test database connection not available")

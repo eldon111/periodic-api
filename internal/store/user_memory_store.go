@@ -1,7 +1,7 @@
 package store
 
 import (
-	"awesomeProject/models"
+	"awesomeProject/internal/models"
 	"sync"
 )
 

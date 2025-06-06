@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"awesomeProject/models"
-	"awesomeProject/store"
-	"awesomeProject/utils"
+	"awesomeProject/internal/models"
+	"awesomeProject/internal/store"
+	"awesomeProject/internal/utils"
 	"context"
 	"encoding/json"
 	"net/http"

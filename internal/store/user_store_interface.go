@@ -1,7 +1,7 @@
 package store
 
 import (
-	"awesomeProject/models"
+	"awesomeProject/internal/models"
 )
 
 // UserStore defines the interface for user storage operations
