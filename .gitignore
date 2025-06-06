@@ -1,4 +1,5 @@
 .aider*
+.codebuddy*
 /.idea/AugmentWebviewStateStore.xml
 
 # AWS credentials - do not commit
