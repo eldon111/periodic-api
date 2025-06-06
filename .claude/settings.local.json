@@ -1,4 +1,5 @@
 {
+  "includeCoAuthoredBy": false,
   "permissions": {
     "allow": [
       "Bash(go get:*)",
@@ -18,7 +19,8 @@
       "Bash(go clean:*)",
       "Bash(go test:*)",
       "Bash(./scripts:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(timeout:*)"
     ],
     "deny": []
   }
