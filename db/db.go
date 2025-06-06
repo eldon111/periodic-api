@@ -62,5 +62,17 @@ func InitDB() (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to create todo_items table: %w", err)
 	}
 
+	// Create the users table if it doesn't exist
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS users (
+			id SERIAL PRIMARY KEY,
+			username TEXT NOT NULL,
+			password_hash BYTEA NOT NULL
+		)
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create users table: %w", err)
+	}
+
 	return db, nil
 }
