@@ -47,7 +47,19 @@ func InitDB() (*sql.DB, error) {
 		)
 	`)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create table: %w", err)
+		return nil, fmt.Errorf("failed to create scheduled_items table: %w", err)
+	}
+
+	// Create the todo_items table if it doesn't exist
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS todo_items (
+			id SERIAL PRIMARY KEY,
+			text TEXT NOT NULL,
+			checked BOOLEAN NOT NULL DEFAULT FALSE
+		)
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create todo_items table: %w", err)
 	}
 
 	return db, nil
