@@ -89,6 +89,28 @@ func (h *ScheduledItemHandler) HandleGetAllScheduledItems(w http.ResponseWriter,
 	json.NewEncoder(w).Encode(items)
 }
 
+// HandleGetNextScheduledItems handles GET requests to retrieve next scheduled items by execution time
+func (h *ScheduledItemHandler) HandleGetNextScheduledItems(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse limit parameter, default to 10
+	limitStr := r.URL.Query().Get("limit")
+	limit := 10
+	if limitStr != "" {
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		}
+	}
+
+	items := h.store.GetNextScheduledItems(limit)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(items)
+}
+
 // HandleUpdateScheduledItem handles PUT requests to update a scheduled item
 func (h *ScheduledItemHandler) HandleUpdateScheduledItem(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
@@ -210,6 +232,9 @@ func (h *ScheduledItemHandler) SetupRoutes() {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
+
+	// Get next scheduled items
+	http.HandleFunc("/scheduled-items/next", h.HandleGetNextScheduledItems)
 
 	// Generate scheduled item from prompt
 	http.HandleFunc("/generate-scheduled-item", h.HandleGenerateScheduledItem)

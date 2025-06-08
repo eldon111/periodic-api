@@ -2,6 +2,8 @@ package store
 
 import (
 	"awesomeProject/internal/models"
+	"awesomeProject/internal/utils"
+	"sort"
 	"sync"
 	"time"
 )
@@ -29,6 +31,14 @@ func (s *MemoryScheduledItemStore) CreateScheduledItem(item models.ScheduledItem
 	// Assign a new ID
 	item.ID = s.nextID
 	s.nextID++
+
+	// Calculate next execution time
+	item.NextExecutionAt = utils.CalculateNextExecution(
+		item.StartsAt,
+		item.Repeats,
+		item.CronExpression,
+		item.Expiration,
+	)
 
 	// Store the item
 	s.items[item.ID] = item
@@ -66,6 +76,15 @@ func (s *MemoryScheduledItemStore) UpdateScheduledItem(id int64, updatedItem mod
 	}
 
 	updatedItem.ID = id
+
+	// Calculate next execution time for updated item
+	updatedItem.NextExecutionAt = utils.CalculateNextExecution(
+		updatedItem.StartsAt,
+		updatedItem.Repeats,
+		updatedItem.CronExpression,
+		updatedItem.Expiration,
+	)
+
 	s.items[id] = updatedItem
 	return updatedItem, true
 }
@@ -81,6 +100,32 @@ func (s *MemoryScheduledItemStore) DeleteScheduledItem(id int64) bool {
 
 	delete(s.items, id)
 	return true
+}
+
+// GetNextScheduledItems returns scheduled items ordered by next execution time
+func (s *MemoryScheduledItemStore) GetNextScheduledItems(limit int) []models.ScheduledItem {
+	s.RLock()
+	defer s.RUnlock()
+
+	// Filter items that have a next execution time
+	var itemsWithNextExecution []models.ScheduledItem
+	for _, item := range s.items {
+		if item.NextExecutionAt != nil {
+			itemsWithNextExecution = append(itemsWithNextExecution, item)
+		}
+	}
+
+	// Sort by next execution time (earliest first)
+	sort.Slice(itemsWithNextExecution, func(i, j int) bool {
+		return itemsWithNextExecution[i].NextExecutionAt.Before(*itemsWithNextExecution[j].NextExecutionAt)
+	})
+
+	// Return only the requested number of items
+	if limit > 0 && limit < len(itemsWithNextExecution) {
+		return itemsWithNextExecution[:limit]
+	}
+
+	return itemsWithNextExecution
 }
 
 // AddSampleData adds sample data to the in-memory store

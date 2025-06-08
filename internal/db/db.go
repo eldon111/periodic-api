@@ -43,8 +43,28 @@ func InitDB() (*sql.DB, error) {
 			starts_at TIMESTAMP NOT NULL,
 			repeats BOOLEAN NOT NULL,
 			cron_expression TEXT,
-			expiration TIMESTAMP
+			expiration TIMESTAMP,
+			next_execution_at TIMESTAMP
 		)
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create scheduled_items table: %w", err)
+	}
+
+	// Add next_execution_at column if it doesn't exist (for existing databases)
+	_, err = db.Exec(`
+		ALTER TABLE scheduled_items 
+		ADD COLUMN IF NOT EXISTS next_execution_at TIMESTAMP
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add next_execution_at column: %w", err)
+	}
+
+	// Create index on next_execution_at for efficient querying
+	_, err = db.Exec(`
+		CREATE INDEX IF NOT EXISTS idx_scheduled_items_next_execution 
+		ON scheduled_items (next_execution_at) 
+		WHERE next_execution_at IS NOT NULL
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create scheduled_items table: %w", err)
