@@ -9,8 +9,14 @@ CREATE TABLE IF NOT EXISTS scheduled_items (
     starts_at TIMESTAMP NOT NULL,
     repeats BOOLEAN NOT NULL,
     cron_expression TEXT,
-    expiration TIMESTAMP
+    expiration TIMESTAMP,
+    next_execution_at TIMESTAMP
 );
+
+-- Create index on next_execution_at for efficient querying
+CREATE INDEX IF NOT EXISTS idx_scheduled_items_next_execution 
+ON scheduled_items (next_execution_at) 
+WHERE next_execution_at IS NOT NULL;
 
 -- Create todo_items table  
 CREATE TABLE IF NOT EXISTS todo_items (
