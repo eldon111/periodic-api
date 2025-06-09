@@ -102,8 +102,8 @@ func (s *MemoryScheduledItemStore) DeleteScheduledItem(id int64) bool {
 	return true
 }
 
-// GetNextScheduledItems returns scheduled items ordered by next execution time
-func (s *MemoryScheduledItemStore) GetNextScheduledItems(limit int) []models.ScheduledItem {
+// GetNextScheduledItems returns scheduled items ordered by next execution time with pagination
+func (s *MemoryScheduledItemStore) GetNextScheduledItems(limit int, offset int64) ([]models.ScheduledItem, error) {
 	s.RLock()
 	defer s.RUnlock()
 
@@ -120,12 +120,15 @@ func (s *MemoryScheduledItemStore) GetNextScheduledItems(limit int) []models.Sch
 		return itemsWithNextExecution[i].NextExecutionAt.Before(*itemsWithNextExecution[j].NextExecutionAt)
 	})
 
-	// Return only the requested number of items
-	if limit > 0 && limit < len(itemsWithNextExecution) {
-		return itemsWithNextExecution[:limit]
+	// Apply pagination
+	startIndex := int(offset)
+	endIndex := startIndex + limit
+
+	if endIndex > len(itemsWithNextExecution) {
+		endIndex = len(itemsWithNextExecution)
 	}
 
-	return itemsWithNextExecution
+	return itemsWithNextExecution[startIndex:endIndex], nil
 }
 
 // AddSampleData adds sample data to the in-memory store

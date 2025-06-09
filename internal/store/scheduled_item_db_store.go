@@ -243,22 +243,23 @@ func (s *PostgresScheduledItemStore) DeleteScheduledItem(id int64) bool {
 }
 
 // GetNextScheduledItems returns scheduled items ordered by next execution time
-func (s *PostgresScheduledItemStore) GetNextScheduledItems(limit int) []models.ScheduledItem {
+func (s *PostgresScheduledItemStore) GetNextScheduledItems(limit int, offset int64) ([]models.ScheduledItem, error) {
 	s.RLock()
 	defer s.RUnlock()
+
+	now := time.Now()
 
 	query := `
 		SELECT id, title, description, starts_at, repeats, cron_expression, expiration, next_execution_at 
 		FROM scheduled_items 
-		WHERE next_execution_at IS NOT NULL 
+		WHERE next_execution_at <= $1 
 		ORDER BY next_execution_at 
-		LIMIT $1
+		LIMIT $2 OFFSET $3
 	`
 
-	rows, err := s.db.Query(query, limit)
+	rows, err := s.db.Query(query, now, limit, offset)
 	if err != nil {
-		log.Printf("Error querying next scheduled items: %v", err)
-		return []models.ScheduledItem{}
+		return []models.ScheduledItem{}, err
 	}
 	defer rows.Close()
 
@@ -281,8 +282,7 @@ func (s *PostgresScheduledItemStore) GetNextScheduledItems(limit int) []models.S
 		)
 
 		if err != nil {
-			log.Printf("Error scanning row: %v", err)
-			continue
+			return []models.ScheduledItem{}, err
 		}
 
 		// Handle nullable fields
@@ -300,82 +300,10 @@ func (s *PostgresScheduledItemStore) GetNextScheduledItems(limit int) []models.S
 	}
 
 	if err = rows.Err(); err != nil {
-		log.Printf("Error iterating rows: %v", err)
+		return []models.ScheduledItem{}, err
 	}
 
-	return items
-}
-
-// UpdateExistingItemsNextExecution updates next_execution_at for all existing items that have null values
-func (s *PostgresScheduledItemStore) UpdateExistingItemsNextExecution() {
-	s.Lock()
-	defer s.Unlock()
-
-	log.Println("Updating next_execution_at for existing scheduled items...")
-
-	// Get all items that don't have next_execution_at set
-	query := `
-		SELECT id, title, description, starts_at, repeats, cron_expression, expiration 
-		FROM scheduled_items 
-		WHERE next_execution_at IS NULL
-	`
-
-	rows, err := s.db.Query(query)
-	if err != nil {
-		log.Printf("Error querying items for migration: %v", err)
-		return
-	}
-	defer rows.Close()
-
-	updateCount := 0
-	for rows.Next() {
-		var item models.ScheduledItem
-		var cronExpression sql.NullString
-		var expiration sql.NullTime
-
-		err := rows.Scan(
-			&item.ID,
-			&item.Title,
-			&item.Description,
-			&item.StartsAt,
-			&item.Repeats,
-			&cronExpression,
-			&expiration,
-		)
-
-		if err != nil {
-			log.Printf("Error scanning row: %v", err)
-			continue
-		}
-
-		// Handle nullable fields
-		if cronExpression.Valid {
-			item.CronExpression = &cronExpression.String
-		}
-		if expiration.Valid {
-			item.Expiration = &expiration.Time
-		}
-
-		// Calculate next execution time
-		nextExecution := utils.CalculateNextExecution(
-			item.StartsAt,
-			item.Repeats,
-			item.CronExpression,
-			item.Expiration,
-		)
-
-		// Update the item with calculated next execution time
-		updateQuery := `UPDATE scheduled_items SET next_execution_at = $1 WHERE id = $2`
-		_, err = s.db.Exec(updateQuery, nextExecution, item.ID)
-		if err != nil {
-			log.Printf("Error updating item %d: %v", item.ID, err)
-			continue
-		}
-
-		updateCount++
-	}
-
-	log.Printf("Updated next_execution_at for %d existing items", updateCount)
+	return items, nil
 }
 
 // AddSampleData adds sample data to the database if it's empty
