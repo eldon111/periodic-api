@@ -2,7 +2,6 @@ package store
 
 import (
 	"awesomeProject/internal/models"
-	"awesomeProject/internal/utils"
 	"database/sql"
 	"log"
 	"sync"
@@ -26,14 +25,6 @@ func NewPostgresScheduledItemStore(db *sql.DB) *PostgresScheduledItemStore {
 func (s *PostgresScheduledItemStore) CreateScheduledItem(item models.ScheduledItem) models.ScheduledItem {
 	s.Lock()
 	defer s.Unlock()
-
-	// Calculate next execution time
-	item.NextExecutionAt = utils.CalculateNextExecution(
-		item.StartsAt,
-		item.Repeats,
-		item.CronExpression,
-		item.Expiration,
-	)
 
 	query := `
 		INSERT INTO scheduled_items 

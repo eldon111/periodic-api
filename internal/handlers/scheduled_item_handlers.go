@@ -45,6 +45,14 @@ func (h *ScheduledItemHandler) HandleCreateScheduledItem(w http.ResponseWriter, 
 		return
 	}
 
+	// Calculate next execution time
+	item.NextExecutionAt = utils.CalculateNextExecution(
+		item.StartsAt,
+		item.Repeats,
+		item.CronExpression,
+		item.Expiration,
+	)
+
 	createdItem := h.store.CreateScheduledItem(item)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -105,7 +113,11 @@ func (h *ScheduledItemHandler) HandleGetNextScheduledItems(w http.ResponseWriter
 		}
 	}
 
-	items := h.store.GetNextScheduledItems(limit)
+	items, err := h.store.GetNextScheduledItems(limit, 0)
+	if err != nil {
+		http.Error(w, "Failed to retrieve scheduled items: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(items)
@@ -214,8 +226,6 @@ func (h *ScheduledItemHandler) SetupRoutes() {
 		switch r.Method {
 		case http.MethodGet:
 			h.HandleGetScheduledItem(w, r)
-		case http.MethodPut:
-			h.HandleUpdateScheduledItem(w, r)
 		case http.MethodDelete:
 			h.HandleDeleteScheduledItem(w, r)
 		default:

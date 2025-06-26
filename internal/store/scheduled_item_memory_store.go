@@ -2,7 +2,6 @@ package store
 
 import (
 	"awesomeProject/internal/models"
-	"awesomeProject/internal/utils"
 	"sort"
 	"sync"
 	"time"
@@ -31,14 +30,6 @@ func (s *MemoryScheduledItemStore) CreateScheduledItem(item models.ScheduledItem
 	// Assign a new ID
 	item.ID = s.nextID
 	s.nextID++
-
-	// Calculate next execution time
-	item.NextExecutionAt = utils.CalculateNextExecution(
-		item.StartsAt,
-		item.Repeats,
-		item.CronExpression,
-		item.Expiration,
-	)
 
 	// Store the item
 	s.items[item.ID] = item
