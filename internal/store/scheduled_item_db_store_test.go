@@ -179,47 +179,6 @@ func TestScheduledItemStore_CRUD(t *testing.T) {
 		}
 	})
 
-	// Test UpdateScheduledItem
-	t.Run("UpdateScheduledItem", func(t *testing.T) {
-		updatedTitle := "Updated Test Item"
-		updatedDescription := "This is an updated test scheduled item"
-		updatedStartsAt := now.Add(time.Hour * 24) // 1 day later
-		updatedCronExpr := "0 12 * * *"            // Run at noon every day
-		updatedExpiration := now.AddDate(0, 2, 0)  // 2 months from now
-
-		updatedItem := models.ScheduledItem{
-			Title:          updatedTitle,
-			Description:    updatedDescription,
-			StartsAt:       updatedStartsAt,
-			Repeats:        true,
-			CronExpression: &updatedCronExpr,
-			Expiration:     &updatedExpiration,
-		}
-
-		result, success := store.UpdateScheduledItem(testItem.ID, updatedItem)
-		if !success {
-			t.Errorf("Failed to update item with ID %d", testItem.ID)
-		}
-		if result.ID != testItem.ID {
-			t.Errorf("Expected item ID to be %d, got %d", testItem.ID, result.ID)
-		}
-		if result.Title != updatedItem.Title {
-			t.Errorf("Expected title to be %s, got %s", updatedItem.Title, result.Title)
-		}
-		if result.Description != updatedItem.Description {
-			t.Errorf("Expected description to be %s, got %s", updatedItem.Description, result.Description)
-		}
-
-		// Verify the update
-		retrievedItem, found := store.GetScheduledItem(testItem.ID)
-		if !found {
-			t.Errorf("Expected to find item with ID %d after update, but not found", testItem.ID)
-		}
-		if retrievedItem.Title != updatedItem.Title {
-			t.Errorf("Expected title to be %s after update, got %s", updatedItem.Title, retrievedItem.Title)
-		}
-	})
-
 	// Test DeleteScheduledItem
 	t.Run("DeleteScheduledItem", func(t *testing.T) {
 		success := store.DeleteScheduledItem(testItem.ID)

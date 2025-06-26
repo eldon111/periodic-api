@@ -66,29 +66,6 @@ func (s *MemoryScheduledItemStore) GetAllScheduledItems() []models.ScheduledItem
 	return items
 }
 
-// UpdateScheduledItem updates an existing scheduled item in the in-memory store
-func (s *MemoryScheduledItemStore) UpdateScheduledItem(id int64, updatedItem models.ScheduledItem) (models.ScheduledItem, bool) {
-	s.Lock()
-	defer s.Unlock()
-
-	if _, exists := s.items[id]; !exists {
-		return models.ScheduledItem{}, false
-	}
-
-	updatedItem.ID = id
-
-	// Calculate next execution time for updated item
-	updatedItem.NextExecutionAt = utils.CalculateNextExecution(
-		updatedItem.StartsAt,
-		updatedItem.Repeats,
-		updatedItem.CronExpression,
-		updatedItem.Expiration,
-	)
-
-	s.items[id] = updatedItem
-	return updatedItem, true
-}
-
 // DeleteScheduledItem removes a scheduled item from the in-memory store
 func (s *MemoryScheduledItemStore) DeleteScheduledItem(id int64) bool {
 	s.Lock()

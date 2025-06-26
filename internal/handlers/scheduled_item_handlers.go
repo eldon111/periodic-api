@@ -111,36 +111,6 @@ func (h *ScheduledItemHandler) HandleGetNextScheduledItems(w http.ResponseWriter
 	json.NewEncoder(w).Encode(items)
 }
 
-// HandleUpdateScheduledItem handles PUT requests to update a scheduled item
-func (h *ScheduledItemHandler) HandleUpdateScheduledItem(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	idStr := r.URL.Path[len("/scheduled-items/"):]
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		http.Error(w, "Invalid ID", http.StatusBadRequest)
-		return
-	}
-
-	var item models.ScheduledItem
-	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	updatedItem, exists := h.store.UpdateScheduledItem(id, item)
-	if !exists {
-		http.Error(w, "Scheduled item not found", http.StatusNotFound)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(updatedItem)
-}
-
 // HandleDeleteScheduledItem handles DELETE requests to remove a scheduled item
 func (h *ScheduledItemHandler) HandleDeleteScheduledItem(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {

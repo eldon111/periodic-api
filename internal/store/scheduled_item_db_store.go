@@ -171,56 +171,6 @@ func (s *PostgresScheduledItemStore) GetAllScheduledItems() []models.ScheduledIt
 	return items
 }
 
-// UpdateScheduledItem updates an existing scheduled item in the database
-func (s *PostgresScheduledItemStore) UpdateScheduledItem(id int64, updatedItem models.ScheduledItem) (models.ScheduledItem, bool) {
-	s.Lock()
-	defer s.Unlock()
-
-	// Calculate next execution time for updated item
-	updatedItem.NextExecutionAt = utils.CalculateNextExecution(
-		updatedItem.StartsAt,
-		updatedItem.Repeats,
-		updatedItem.CronExpression,
-		updatedItem.Expiration,
-	)
-
-	query := `
-		UPDATE scheduled_items 
-		SET title = $1, description = $2, starts_at = $3, repeats = $4, cron_expression = $5, expiration = $6, next_execution_at = $7 
-		WHERE id = $8
-	`
-
-	result, err := s.db.Exec(
-		query,
-		updatedItem.Title,
-		updatedItem.Description,
-		updatedItem.StartsAt,
-		updatedItem.Repeats,
-		updatedItem.CronExpression,
-		updatedItem.Expiration,
-		updatedItem.NextExecutionAt,
-		id,
-	)
-
-	if err != nil {
-		log.Printf("Error updating scheduled item: %v", err)
-		return models.ScheduledItem{}, false
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		log.Printf("Error getting rows affected: %v", err)
-		return models.ScheduledItem{}, false
-	}
-
-	if rowsAffected == 0 {
-		return models.ScheduledItem{}, false
-	}
-
-	updatedItem.ID = id
-	return updatedItem, true
-}
-
 // DeleteScheduledItem removes a scheduled item from the database
 func (s *PostgresScheduledItemStore) DeleteScheduledItem(id int64) bool {
 	s.Lock()
@@ -339,8 +289,5 @@ func (s *PostgresScheduledItemStore) AddSampleData() {
 			CronExpression: &cronExpr,
 			Expiration:     &expirationTime,
 		})
-	} else {
-		// If there are existing items, update their next_execution_at values
-		s.UpdateExistingItemsNextExecution()
 	}
 }

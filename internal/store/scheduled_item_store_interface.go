@@ -10,7 +10,6 @@ type ScheduledItemStore interface {
 	GetScheduledItem(id int64) (models.ScheduledItem, bool)
 	GetAllScheduledItems() []models.ScheduledItem
 	GetNextScheduledItems(limit int, offset int64) ([]models.ScheduledItem, error)
-	UpdateScheduledItem(id int64, updatedItem models.ScheduledItem) (models.ScheduledItem, bool)
 	DeleteScheduledItem(id int64) bool
 	AddSampleData()
 }

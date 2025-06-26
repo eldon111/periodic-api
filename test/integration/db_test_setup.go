@@ -4,15 +4,17 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
+	_ "github.com/lib/pq"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
-	_ "github.com/lib/pq"
 )
 
 // TestDB holds the connection to the test database
@@ -42,9 +44,6 @@ func TestMain(m *testing.M) {
 	// Run the tests
 	exitCode := m.Run()
 
-	// Clean up the test database
-	cleanupTestDB(TestDB)
-
 	os.Exit(exitCode)
 }
 
@@ -62,9 +61,6 @@ func regularTestMain(m *testing.M) {
 
 	// Run the tests
 	exitCode := m.Run()
-
-	// Clean up the test database
-	cleanupTestDB(TestDB)
 
 	os.Exit(exitCode)
 }
@@ -101,63 +97,32 @@ func setupTestDB() (*sql.DB, error) {
 	return db, nil
 }
 
-// createAllTables creates all required tables for testing
+// createAllTables creates all required tables for testing by reading from db_init.sql
 func createAllTables(db *sql.DB) error {
-	// Create scheduled_items table
-	_, err := db.Exec(`
-		DROP TABLE IF EXISTS scheduled_items;
-		CREATE TABLE scheduled_items (
-			id SERIAL PRIMARY KEY,
-			title TEXT NOT NULL,
-			description TEXT NOT NULL,
-			starts_at TIMESTAMP NOT NULL,
-			repeats BOOLEAN NOT NULL,
-			cron_expression TEXT,
-			expiration TIMESTAMP
-		)
-	`)
+	// Get the path to db_init.sql relative to the project root
+	// Go up from test/integration to project root
+	projectRoot := filepath.Join("..", "..")
+	sqlFilePath := filepath.Join(projectRoot, "db_init.sql")
+
+	// Open and read the SQL file
+	file, err := os.Open(sqlFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to create scheduled_items table: %w", err)
+		return fmt.Errorf("failed to open db_init.sql: %w", err)
+	}
+	defer file.Close()
+
+	sqlBytes, err := io.ReadAll(file)
+	if err != nil {
+		return fmt.Errorf("failed to read db_init.sql: %w", err)
 	}
 
-	// Create todo_items table
-	_, err = db.Exec(`
-		DROP TABLE IF EXISTS todo_items;
-		CREATE TABLE todo_items (
-			id SERIAL PRIMARY KEY,
-			text TEXT NOT NULL,
-			checked BOOLEAN NOT NULL DEFAULT FALSE
-		)
-	`)
+	// Execute the SQL from the file
+	_, err = db.Exec(string(sqlBytes))
 	if err != nil {
-		return fmt.Errorf("failed to create todo_items table: %w", err)
-	}
-
-	// Create users table
-	_, err = db.Exec(`
-		DROP TABLE IF EXISTS users;
-		CREATE TABLE users (
-			id SERIAL PRIMARY KEY,
-			username TEXT NOT NULL,
-			password_hash BYTEA NOT NULL
-		)
-	`)
-	if err != nil {
-		return fmt.Errorf("failed to create users table: %w", err)
+		return fmt.Errorf("failed to execute db_init.sql: %w", err)
 	}
 
 	return nil
-}
-
-// cleanupTestDB cleans up the test database
-func cleanupTestDB(db *sql.DB) {
-	tables := []string{"scheduled_items", "todo_items", "users"}
-	for _, table := range tables {
-		_, err := db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", table))
-		if err != nil {
-			log.Printf("Failed to drop %s table: %v", table, err)
-		}
-	}
 }
 
 // getEnvOrDefault returns the environment variable value or a default value
@@ -184,7 +149,7 @@ func skipIfDBNotAvailable(t *testing.T) {
 			}
 		}
 	}
-	
+
 	if TestDB == nil && TestContainerDB == nil {
 		t.Skip("Test database connection not available")
 	}
@@ -316,7 +281,7 @@ func connectToContainer(ctx context.Context, container testcontainers.Container)
 // isDockerAvailable checks if Docker is available
 func isDockerAvailable() bool {
 	ctx := context.Background()
-	
+
 	// Try to get Docker client
 	provider, err := testcontainers.NewDockerProvider()
 	if err != nil {

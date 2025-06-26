@@ -50,7 +50,10 @@ func TestMemoryStoreGetNextScheduledItems(t *testing.T) {
 	store.CreateScheduledItem(item4)
 
 	// Test GetNextScheduledItems
-	nextItems := store.GetNextScheduledItems(5)
+	nextItems, err := store.GetNextScheduledItems(5, 0)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
 
 	// Should return 3 items (excluding the one with nil NextExecutionAt)
 	if len(nextItems) != 3 {
@@ -63,13 +66,21 @@ func TestMemoryStoreGetNextScheduledItems(t *testing.T) {
 	}
 
 	// Test with limit
-	limitedItems := store.GetNextScheduledItems(2)
+	limitedItems, err := store.GetNextScheduledItems(2, 0)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
 	if len(limitedItems) != 2 {
 		t.Errorf("Expected 2 items with limit but got %d", len(limitedItems))
 	}
 
 	// Test with limit larger than available items
-	allItems := store.GetNextScheduledItems(10)
+	allItems, err := store.GetNextScheduledItems(10, 0)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
 	if len(allItems) != 3 {
 		t.Errorf("Expected 3 items with large limit but got %d", len(allItems))
 	}

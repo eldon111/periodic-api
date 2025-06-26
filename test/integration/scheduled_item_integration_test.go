@@ -47,33 +47,6 @@ func TestScheduledItemIntegration(t *testing.T) {
 			t.Errorf("Expected title %s, got %s", testItem.Title, retrieved.Title)
 		}
 
-		// Update
-		updated := models.ScheduledItem{
-			Title:          "Updated Integration Test Item",
-			Description:    "Updated description",
-			StartsAt:       now.Add(time.Hour),
-			Repeats:        false,
-			CronExpression: nil,
-			Expiration:     nil,
-		}
-
-		result, success := scheduleStore.UpdateScheduledItem(created.ID, updated)
-		if !success {
-			t.Fatal("Update should succeed")
-		}
-		if result.Title != updated.Title {
-			t.Errorf("Expected updated title %s, got %s", updated.Title, result.Title)
-		}
-
-		// Verify update persisted
-		verified, found := scheduleStore.GetScheduledItem(created.ID)
-		if !found {
-			t.Fatal("Should still find the item after update")
-		}
-		if verified.Title != updated.Title {
-			t.Errorf("Update should persist: expected %s, got %s", updated.Title, verified.Title)
-		}
-
 		// Delete
 		deleted := scheduleStore.DeleteScheduledItem(created.ID)
 		if !deleted {
@@ -142,12 +115,6 @@ func TestScheduledItemIntegration(t *testing.T) {
 		_, found := scheduleStore.GetScheduledItem(99999)
 		if found {
 			t.Error("Should not find non-existent item")
-		}
-
-		// Test update non-existent item
-		_, success := scheduleStore.UpdateScheduledItem(99999, testItem)
-		if success {
-			t.Error("Update of non-existent item should fail")
 		}
 
 		// Test delete non-existent item
