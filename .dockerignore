@@ -1,0 +1,34 @@
+# CDK output directories
+cdk.out/
+*.out/
+infrastructure/cdk/cdk.out/
+infrastructure/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+
+# Documentation
+*.md
+README.md
+CLAUDE.md
+GO_PROJECT_STRUCTURE.md
+
+# Scripts and tests
+scripts/
+test/
+*_test.go
+
+# Build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Temporary files
+*.tmp
+*.temp

@@ -1,0 +1,10 @@
+# CDK asset staging directory
+.cdk.staging
+cdk.out/
+cdk
+
+# Go binary
+main
+
+# Go dependencies
+go.sum
