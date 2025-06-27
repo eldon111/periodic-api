@@ -25,7 +25,7 @@ func NewInfrastructureStack(scope constructs.Construct, id string, props *Infras
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
 	// Create VPC
-	vpc := awsec2.NewVpc(stack, jsii.String("ScheduledItemsVPC"), &awsec2.VpcProps{
+	vpc := awsec2.NewVpc(stack, jsii.String("PeriodicApiVPC"), &awsec2.VpcProps{
 		MaxAzs:      jsii.Number(2),
 		NatGateways: jsii.Number(1), // Cost optimization - single NAT gateway
 		SubnetConfiguration: &[]*awsec2.SubnetConfiguration{
@@ -48,7 +48,7 @@ func NewInfrastructureStack(scope constructs.Construct, id string, props *Infras
 	})
 
 	// Create RDS Serverless v2 PostgreSQL
-	dbCluster := awsrds.NewDatabaseCluster(stack, jsii.String("ScheduledItemsDB"), &awsrds.DatabaseClusterProps{
+	dbCluster := awsrds.NewDatabaseCluster(stack, jsii.String("PeriodicApiDB"), &awsrds.DatabaseClusterProps{
 		Engine: awsrds.DatabaseClusterEngine_AuroraPostgres(&awsrds.AuroraPostgresClusterEngineProps{
 			Version: awsrds.AuroraPostgresEngineVersion_VER_15_4(),
 		}),
@@ -61,25 +61,25 @@ func NewInfrastructureStack(scope constructs.Construct, id string, props *Infras
 		VpcSubnets: &awsec2.SubnetSelection{
 			SubnetType: awsec2.SubnetType_PRIVATE_ISOLATED,
 		},
-		DefaultDatabaseName: jsii.String("scheduled_items_db"),
+		DefaultDatabaseName: jsii.String("periodic_api_db"),
 		DeletionProtection:  jsii.Bool(false),             // Set to true for production
 		RemovalPolicy:       awscdk.RemovalPolicy_DESTROY, // Change for production
 	})
 
 	// Create ECS Cluster
-	cluster := awsecs.NewCluster(stack, jsii.String("ScheduledItemsCluster"), &awsecs.ClusterProps{
+	cluster := awsecs.NewCluster(stack, jsii.String("PeriodicApiCluster"), &awsecs.ClusterProps{
 		Vpc:                 vpc,
 		ContainerInsightsV2: awsecs.ContainerInsights_ENABLED,
 	})
 
 	// Create Task Definition
-	taskDefinition := awsecs.NewFargateTaskDefinition(stack, jsii.String("ScheduledItemsTaskDef"), &awsecs.FargateTaskDefinitionProps{
+	taskDefinition := awsecs.NewFargateTaskDefinition(stack, jsii.String("PeriodicApiTaskDef"), &awsecs.FargateTaskDefinitionProps{
 		MemoryLimitMiB: jsii.Number(512),
 		Cpu:            jsii.Number(256),
 	})
 
 	// Add container to task definition
-	container := taskDefinition.AddContainer(jsii.String("ScheduledItemsContainer"), &awsecs.ContainerDefinitionOptions{
+	container := taskDefinition.AddContainer(jsii.String("PeriodicApiContainer"), &awsecs.ContainerDefinitionOptions{
 		Image: awsecs.ContainerImage_FromAsset(jsii.String("../../"), &awsecs.AssetImageProps{
 			File:      jsii.String("Dockerfile"),
 			BuildArgs: &map[string]*string{},
@@ -95,7 +95,7 @@ func NewInfrastructureStack(scope constructs.Construct, id string, props *Infras
 			"DB_PASSWORD": awsecs.Secret_FromSecretsManager(dbCluster.Secret(), jsii.String("password")),
 		},
 		Logging: awsecs.LogDrivers_AwsLogs(&awsecs.AwsLogDriverProps{
-			StreamPrefix: jsii.String("scheduled-items"),
+			StreamPrefix: jsii.String("periodic-api"),
 			LogRetention: awslogs.RetentionDays_ONE_WEEK,
 		}),
 	})
@@ -106,7 +106,7 @@ func NewInfrastructureStack(scope constructs.Construct, id string, props *Infras
 	})
 
 	// Create Fargate Service
-	service := awsecs.NewFargateService(stack, jsii.String("ScheduledItemsService"), &awsecs.FargateServiceProps{
+	service := awsecs.NewFargateService(stack, jsii.String("PeriodicApiService"), &awsecs.FargateServiceProps{
 		Cluster:        cluster,
 		TaskDefinition: taskDefinition,
 		DesiredCount:   jsii.Number(1),
@@ -117,7 +117,7 @@ func NewInfrastructureStack(scope constructs.Construct, id string, props *Infras
 	})
 
 	// Create Application Load Balancer
-	alb := awselasticloadbalancingv2.NewApplicationLoadBalancer(stack, jsii.String("ScheduledItemsALB"), &awselasticloadbalancingv2.ApplicationLoadBalancerProps{
+	alb := awselasticloadbalancingv2.NewApplicationLoadBalancer(stack, jsii.String("PeriodicApiALB"), &awselasticloadbalancingv2.ApplicationLoadBalancerProps{
 		Vpc:            vpc,
 		InternetFacing: jsii.Bool(true),
 		VpcSubnets: &awsec2.SubnetSelection{
@@ -126,7 +126,7 @@ func NewInfrastructureStack(scope constructs.Construct, id string, props *Infras
 	})
 
 	// Create Target Group
-	targetGroup := awselasticloadbalancingv2.NewApplicationTargetGroup(stack, jsii.String("ScheduledItemsTargetGroup"), &awselasticloadbalancingv2.ApplicationTargetGroupProps{
+	targetGroup := awselasticloadbalancingv2.NewApplicationTargetGroup(stack, jsii.String("PeriodicApiTargetGroup"), &awselasticloadbalancingv2.ApplicationTargetGroupProps{
 		Port:       jsii.Number(8080),
 		Protocol:   awselasticloadbalancingv2.ApplicationProtocol_HTTP,
 		Vpc:        vpc,
@@ -145,7 +145,7 @@ func NewInfrastructureStack(scope constructs.Construct, id string, props *Infras
 	targetGroup.AddTarget(service)
 
 	// Add listener to ALB
-	alb.AddListener(jsii.String("ScheduledItemsListener"), &awselasticloadbalancingv2.BaseApplicationListenerProps{
+	alb.AddListener(jsii.String("PeriodicApiListener"), &awselasticloadbalancingv2.BaseApplicationListenerProps{
 		Port:                jsii.Number(80),
 		Protocol:            awselasticloadbalancingv2.ApplicationProtocol_HTTP,
 		DefaultTargetGroups: &[]awselasticloadbalancingv2.IApplicationTargetGroup{targetGroup},
@@ -174,7 +174,7 @@ func main() {
 
 	app := awscdk.NewApp(nil)
 
-	NewInfrastructureStack(app, "ScheduledItemsInfrastructureStack", &InfrastructureStackProps{
+	NewInfrastructureStack(app, "PeriodicApiInfrastructureStack", &InfrastructureStackProps{
 		awscdk.StackProps{
 			Env: env(),
 		},

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # AWS Infrastructure Deployment Script
-# This script deploys the scheduled items API to AWS using CDK
+# This script deploys the Periodic API to AWS using CDK
 
 set -e
 
