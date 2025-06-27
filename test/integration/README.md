@@ -1,6 +1,6 @@
 # Integration Tests
 
-This directory contains integration tests for the database stores in the awesomeProject.
+This directory contains integration tests for the database stores in the Periodic API.
 
 ## Overview
 

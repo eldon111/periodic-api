@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"awesomeProject/internal/models"
-	"awesomeProject/internal/store"
-	"awesomeProject/internal/utils"
+	"periodic-api/internal/models"
+	"periodic-api/internal/store"
+	"periodic-api/internal/utils"
 	"context"
 	"encoding/json"
 	"net/http"

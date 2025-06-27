@@ -3,7 +3,7 @@ version: '3.8'
 services:
   test-postgres:
     image: postgres:15-alpine
-    container_name: awesomeproject-test-db
+    container_name: periodic-api-test-db
     environment:
       POSTGRES_DB: test_db
       POSTGRES_USER: testuser

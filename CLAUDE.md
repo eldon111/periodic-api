@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Go REST API server providing CRUD operations for scheduled items. The application features a dual-storage architecture that can switch between PostgreSQL (for production) and in-memory storage (for local development) via the `USE_POSTGRES_DB` environment variable.
+This is the **Periodic API** - a Go REST API server that serves as the backend for the Periodic app. It provides CRUD operations for scheduled items and features a dual-storage architecture that can switch between PostgreSQL (for production) and in-memory storage (for local development) via the `USE_POSTGRES_DB` environment variable.
 
 ## Common Commands
 

@@ -1,4 +1,4 @@
-module awesomeProject
+module periodic-api
 
 go 1.24
 

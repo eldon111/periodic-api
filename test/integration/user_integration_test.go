@@ -1,8 +1,8 @@
 package integration
 
 import (
-	"awesomeProject/internal/models"
-	"awesomeProject/internal/store"
+	"periodic-api/internal/models"
+	"periodic-api/internal/store"
 	"bytes"
 	"testing"
 )

@@ -1,6 +1,6 @@
 # Scripts
 
-This directory contains shell scripts for testing and running various operations in the awesomeProject.
+This directory contains shell scripts for testing and running various operations in the Periodic API.
 
 ## Available Scripts
 

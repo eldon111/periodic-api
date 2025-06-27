@@ -20,7 +20,8 @@
       "Bash(go test:*)",
       "Bash(./scripts:*)",
       "Bash(true)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(go mod:*)"
     ],
     "deny": []
   }

@@ -1,7 +1,7 @@
 package store
 
 import (
-	"awesomeProject/internal/models"
+	"periodic-api/internal/models"
 	"sort"
 	"sync"
 	"time"

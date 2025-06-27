@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"awesomeProject/internal/db"
-	"awesomeProject/internal/handlers"
-	"awesomeProject/internal/store"
+	"periodic-api/internal/db"
+	"periodic-api/internal/handlers"
+	"periodic-api/internal/store"
 )
 
 func init() {

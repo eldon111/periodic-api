@@ -1,7 +1,7 @@
 package store
 
 import (
-	"awesomeProject/internal/models"
+	"periodic-api/internal/models"
 )
 
 // ScheduledItemStore defines the interface for scheduled item storage operations

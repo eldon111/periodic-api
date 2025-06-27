@@ -8,8 +8,8 @@ import (
 	"syscall"
 	"time"
 
-	"awesomeProject/internal/db"
-	"awesomeProject/internal/store"
+	"periodic-api/internal/db"
+	"periodic-api/internal/store"
 )
 
 func init() {
