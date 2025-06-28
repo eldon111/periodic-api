@@ -21,7 +21,9 @@
       "Bash(./scripts:*)",
       "Bash(true)",
       "Bash(timeout:*)",
-      "Bash(go mod:*)"
+      "Bash(go mod:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(gh issue view:*)"
     ],
     "deny": []
   }

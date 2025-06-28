@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteTargetsManager">
+    <targets>
+      <target name="WSL - Arch" type="wsl" uuid="db067e68-1465-419e-8bf9-bc16a2c38242">
+        <config>
+          <option name="distributionMsId" value="Arch" />
+          <option name="projectRootOnTarget" value="{exitCode=0, timeout=false, cancelled=false, stdout=/tmp/tmp.5qPnngJdwi&#13;&#10;, stderr=}/periodic-api" />
+        </config>
+        <ContributedStateBase type="GoLanguageRuntime">
+          <config>
+            <option name="goRoot" value="/usr/sbin/go" />
+          </config>
+        </ContributedStateBase>
+      </target>
+    </targets>
+  </component>
+</project>

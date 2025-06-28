@@ -5,11 +5,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"periodic-api/internal/db"
 	"periodic-api/internal/handlers"
+	"periodic-api/internal/migrations"
 	"periodic-api/internal/store"
 )
 
@@ -33,6 +35,33 @@ func main() {
 		}
 		defer database.Close()
 
+		// Run migrations if auto-migration is enabled
+		autoMigrate := os.Getenv("AUTO_MIGRATE")
+		if autoMigrate == "" || strings.ToLower(autoMigrate) == "true" {
+			log.Println("Running database migrations...")
+
+			// Get migrations directory path
+			migrationsPath := "migrations"
+			if customPath := os.Getenv("MIGRATIONS_PATH"); customPath != "" {
+				migrationsPath = customPath
+			}
+
+			absPath, err := filepath.Abs(migrationsPath)
+			if err != nil {
+				log.Fatalf("Failed to get absolute path for migrations: %v", err)
+			}
+
+			// Check if migrations directory exists
+			if _, err := os.Stat(absPath); os.IsNotExist(err) {
+				log.Printf("Migrations directory does not exist: %s. Skipping auto-migration.", absPath)
+			} else {
+				if err := migrations.MigrateUp(database, absPath); err != nil {
+					log.Fatalf("Failed to run migrations: %v", err)
+				}
+				log.Println("Database migrations completed successfully")
+			}
+		}
+
 		// Create PostgreSQL store instance
 		itemStore = store.NewPostgresScheduledItemStore(database)
 		log.Println("Using PostgreSQL database for storage")
@@ -41,9 +70,6 @@ func main() {
 		itemStore = store.NewMemoryScheduledItemStore()
 		log.Println("Using in-memory database for storage")
 	}
-
-	// Add sample data if needed
-	itemStore.AddSampleData()
 
 	// Create handler instance
 	itemHandler := handlers.NewScheduledItemHandler(itemStore)

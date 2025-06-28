@@ -17,14 +17,14 @@ func getEnvOrDefault(key, defaultValue string) string {
 	return defaultValue
 }
 
-// InitDB initializes the database connection and creates the necessary tables
+// InitDB initializes the database connection without running migrations
 func InitDB() (*sql.DB, error) {
 	// Get database connection details from environment variables or use defaults
 	dbHost := getEnvOrDefault("DB_HOST", "localhost")
 	dbPortStr := getEnvOrDefault("DB_PORT", "5432")
-	dbUser := getEnvOrDefault("DB_USER", "postgres")
-	dbPass := getEnvOrDefault("DB_PASSWORD", "your-password")
-	dbName := getEnvOrDefault("DB_NAME", "scheduled_items_db")
+	dbUser := getEnvOrDefault("DB_USER", "eldon")
+	dbPass := getEnvOrDefault("DB_PASSWORD", "moron")
+	dbName := getEnvOrDefault("DB_NAME", "periodic_db")
 
 	// Convert port to integer
 	dbPort, err := strconv.Atoi(dbPortStr)
@@ -46,18 +46,6 @@ func InitDB() (*sql.DB, error) {
 	// Test the connection
 	if err = db.Ping(); err != nil {
 		return nil, fmt.Errorf("db.Ping: %w", err)
-	}
-
-	// Read the SQL script from file
-	sqlScript, err := os.ReadFile("db_init.sql")
-	if err != nil {
-		return nil, fmt.Errorf("failed to read db_init.sql: %w", err)
-	}
-
-	// Execute the SQL script
-	_, err = db.Exec(string(sqlScript))
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute db_init.sql: %w", err)
 	}
 
 	return db, nil
