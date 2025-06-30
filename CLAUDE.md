@@ -44,6 +44,15 @@ go build
 go mod tidy
 ```
 
+### OpenAPI/Swagger Documentation
+```bash
+# Generate OpenAPI specification from code annotations
+~/go/bin/swag init -g cmd/app/main.go -o docs
+
+# Alternative: use go run if swag is not in PATH
+go run github.com/swaggo/swag/cmd/swag@latest init -g cmd/app/main.go -o docs
+```
+
 ### Database Migrations
 ```bash
 # Run all pending migrations

@@ -1,3 +1,14 @@
+// Package main implements the Periodic API server
+// @title Periodic API
+// @version 1.0
+// @description A REST API server for managing Periodic items with support for PostgreSQL and in-memory storage.
+// @termsOfService http://swagger.io/terms/
+// @contact.name API Support
+// @contact.email eldon+periodic@emathias.com
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+// @host localhost:8080
+// @BasePath /
 package main
 
 import (
@@ -9,10 +20,13 @@ import (
 	"strings"
 	"time"
 
+	_ "periodic-api/docs"
 	"periodic-api/internal/db"
 	"periodic-api/internal/handlers"
 	"periodic-api/internal/migrations"
 	"periodic-api/internal/store"
+
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func init() {
@@ -77,8 +91,12 @@ func main() {
 	// Set up routes
 	itemHandler.SetupRoutes()
 
+	// Add Swagger documentation endpoint
+	http.HandleFunc("/swagger/", httpSwagger.WrapHandler)
+
 	// Start the server
 	port := ":8080"
 	fmt.Printf("Server starting on port %s...\n", port)
+	fmt.Printf("API documentation available at: http://localhost%s/swagger/\n", port)
 	log.Fatal(http.ListenAndServe(port, nil))
 }

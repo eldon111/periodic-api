@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"periodic-api/internal/models"
-	"periodic-api/internal/store"
-	"periodic-api/internal/utils"
 	"context"
 	"encoding/json"
 	"net/http"
+	"periodic-api/internal/models"
+	"periodic-api/internal/store"
+	"periodic-api/internal/utils"
 	"strconv"
 	"strings"
 )
@@ -33,6 +33,15 @@ func NewScheduledItemHandler(store store.ScheduledItemStore) *ScheduledItemHandl
 }
 
 // HandleCreateScheduledItem handles POST requests to create a new scheduled item
+// @Summary Create a scheduled item
+// @Description Create a new scheduled item with the given details
+// @Tags scheduled-items
+// @Accept json
+// @Produce json
+// @Param item body models.ScheduledItem true "Scheduled item to create"
+// @Success 201 {object} models.ScheduledItem
+// @Failure 400 {string} string "Bad request"
+// @Router /scheduled-items [post]
 func (h *ScheduledItemHandler) HandleCreateScheduledItem(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -61,6 +70,15 @@ func (h *ScheduledItemHandler) HandleCreateScheduledItem(w http.ResponseWriter, 
 }
 
 // HandleGetScheduledItem handles GET requests to retrieve a scheduled item by ID
+// @Summary Get a scheduled item by ID
+// @Description Get a specific scheduled item by its ID
+// @Tags scheduled-items
+// @Produce json
+// @Param id path int true "Scheduled item ID"
+// @Success 200 {object} models.ScheduledItem
+// @Failure 400 {string} string "Invalid ID"
+// @Failure 404 {string} string "Scheduled item not found"
+// @Router /scheduled-items/{id} [get]
 func (h *ScheduledItemHandler) HandleGetScheduledItem(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -85,6 +103,12 @@ func (h *ScheduledItemHandler) HandleGetScheduledItem(w http.ResponseWriter, r *
 }
 
 // HandleGetAllScheduledItems handles GET requests to retrieve all scheduled items
+// @Summary Get all scheduled items
+// @Description Retrieve all scheduled items from the store
+// @Tags scheduled-items
+// @Produce json
+// @Success 200 {array} models.ScheduledItem
+// @Router /scheduled-items [get]
 func (h *ScheduledItemHandler) HandleGetAllScheduledItems(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -98,6 +122,14 @@ func (h *ScheduledItemHandler) HandleGetAllScheduledItems(w http.ResponseWriter,
 }
 
 // HandleGetNextScheduledItems handles GET requests to retrieve next scheduled items by execution time
+// @Summary Get next scheduled items
+// @Description Retrieve the next scheduled items ordered by execution time
+// @Tags scheduled-items
+// @Produce json
+// @Param limit query int false "Maximum number of items to return" default(10)
+// @Success 200 {array} models.ScheduledItem
+// @Failure 500 {string} string "Internal server error"
+// @Router /scheduled-items/next [get]
 func (h *ScheduledItemHandler) HandleGetNextScheduledItems(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -124,6 +156,14 @@ func (h *ScheduledItemHandler) HandleGetNextScheduledItems(w http.ResponseWriter
 }
 
 // HandleDeleteScheduledItem handles DELETE requests to remove a scheduled item
+// @Summary Delete a scheduled item
+// @Description Delete a scheduled item by its ID
+// @Tags scheduled-items
+// @Param id path int true "Scheduled item ID"
+// @Success 204 "No content"
+// @Failure 400 {string} string "Invalid ID"
+// @Failure 404 {string} string "Scheduled item not found"
+// @Router /scheduled-items/{id} [delete]
 func (h *ScheduledItemHandler) HandleDeleteScheduledItem(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -147,11 +187,22 @@ func (h *ScheduledItemHandler) HandleDeleteScheduledItem(w http.ResponseWriter, 
 
 // GeneratePromptRequest represents the request body for generating scheduled items
 type GeneratePromptRequest struct {
-	Prompt   string `json:"prompt"`
-	Timezone string `json:"timezone"`
+	Prompt   string `json:"prompt" example:"Schedule a weekly team meeting every Tuesday at 2 PM"`
+	Timezone string `json:"timezone" example:"America/New_York"`
 }
 
 // HandleGenerateScheduledItem handles POST requests to generate a scheduled item from a prompt
+// @Summary Generate a scheduled item from a text prompt
+// @Description Use AI to generate a scheduled item from a natural language prompt
+// @Tags generation
+// @Accept json
+// @Produce json
+// @Param request body GeneratePromptRequest true "Generation request with prompt and timezone"
+// @Success 200 {object} models.ScheduledItem
+// @Failure 400 {string} string "Bad request"
+// @Failure 500 {string} string "Internal server error"
+// @Failure 503 {string} string "AWS LLM service not available"
+// @Router /generate-scheduled-item [post]
 func (h *ScheduledItemHandler) HandleGenerateScheduledItem(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)

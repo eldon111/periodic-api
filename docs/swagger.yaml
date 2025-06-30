@@ -1,0 +1,201 @@
+basePath: /
+definitions:
+  periodic-api_internal_handlers.GeneratePromptRequest:
+    properties:
+      prompt:
+        example: Schedule a weekly team meeting every Tuesday at 2 PM
+        type: string
+      timezone:
+        example: America/New_York
+        type: string
+    type: object
+  periodic-api_internal_models.ScheduledItem:
+    properties:
+      cronExpression:
+        example: 0 9 * * 1-5
+        type: string
+      description:
+        example: Team daily standup meeting to discuss progress
+        type: string
+      expiration:
+        example: "2024-12-31T23:59:59Z"
+        type: string
+      id:
+        example: 1
+        type: integer
+      nextExecutionAt:
+        example: "2024-01-02T09:00:00Z"
+        type: string
+      repeats:
+        example: true
+        type: boolean
+      startsAt:
+        example: "2024-01-01T09:00:00Z"
+        type: string
+      title:
+        example: Daily standup meeting
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+  description: A REST API server for managing scheduled items with support for PostgreSQL
+    and in-memory storage.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Periodic API
+  version: "1.0"
+paths:
+  /generate-scheduled-item:
+    post:
+      consumes:
+      - application/json
+      description: Use AI to generate a scheduled item from a natural language prompt
+      parameters:
+      - description: Generation request with prompt and timezone
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/periodic-api_internal_handlers.GeneratePromptRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/periodic-api_internal_models.ScheduledItem'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+        "503":
+          description: AWS LLM service not available
+          schema:
+            type: string
+      summary: Generate a scheduled item from a text prompt
+      tags:
+      - generation
+  /scheduled-items:
+    get:
+      description: Retrieve all scheduled items from the store
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/periodic-api_internal_models.ScheduledItem'
+            type: array
+      summary: Get all scheduled items
+      tags:
+      - scheduled-items
+    post:
+      consumes:
+      - application/json
+      description: Create a new scheduled item with the given details
+      parameters:
+      - description: Scheduled item to create
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/periodic-api_internal_models.ScheduledItem'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/periodic-api_internal_models.ScheduledItem'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+      summary: Create a scheduled item
+      tags:
+      - scheduled-items
+  /scheduled-items/{id}:
+    delete:
+      description: Delete a scheduled item by its ID
+      parameters:
+      - description: Scheduled item ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No content
+        "400":
+          description: Invalid ID
+          schema:
+            type: string
+        "404":
+          description: Scheduled item not found
+          schema:
+            type: string
+      summary: Delete a scheduled item
+      tags:
+      - scheduled-items
+    get:
+      description: Get a specific scheduled item by its ID
+      parameters:
+      - description: Scheduled item ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/periodic-api_internal_models.ScheduledItem'
+        "400":
+          description: Invalid ID
+          schema:
+            type: string
+        "404":
+          description: Scheduled item not found
+          schema:
+            type: string
+      summary: Get a scheduled item by ID
+      tags:
+      - scheduled-items
+  /scheduled-items/next:
+    get:
+      description: Retrieve the next scheduled items ordered by execution time
+      parameters:
+      - default: 10
+        description: Maximum number of items to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/periodic-api_internal_models.ScheduledItem'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get next scheduled items
+      tags:
+      - scheduled-items
+swagger: "2.0"
