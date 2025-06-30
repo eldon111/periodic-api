@@ -38,6 +38,7 @@ func init() {
 func main() {
 	var itemStore store.ScheduledItemStore
 	var todoStore store.TodoItemStore
+	var userStore store.UserStore
 
 	// Check environment variable to determine which store to use
 	usePostgres := os.Getenv("USE_POSTGRES_DB")
@@ -80,24 +81,29 @@ func main() {
 		// Create PostgreSQL store instances
 		itemStore = store.NewPostgresScheduledItemStore(database)
 		todoStore = store.NewPostgresTodoItemStore(database)
+		userStore = store.NewPostgresUserStore(database)
 		log.Println("Using PostgreSQL database for storage")
 	} else {
 		// Create in-memory store instances
 		itemStore = store.NewMemoryScheduledItemStore()
 		todoStore = store.NewMemoryTodoItemStore()
+		userStore = store.NewMemoryUserStore()
 		log.Println("Using in-memory database for storage")
 	}
 
 	// Add sample data for stores
 	todoStore.AddSampleData()
+	userStore.AddSampleData()
 
 	// Create handler instances
 	itemHandler := handlers.NewScheduledItemHandler(itemStore)
 	todoHandler := handlers.NewTodoItemHandler(todoStore)
+	userHandler := handlers.NewUserHandler(userStore)
 
 	// Set up routes
 	itemHandler.SetupRoutes()
 	todoHandler.SetupRoutes()
+	userHandler.SetupRoutes()
 
 	// Add Swagger documentation endpoint
 	http.HandleFunc("/swagger/", httpSwagger.WrapHandler)
