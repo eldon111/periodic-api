@@ -55,12 +55,24 @@ func (h *ScheduledItemHandler) HandleCreateScheduledItem(w http.ResponseWriter, 
 	}
 
 	// Calculate next execution time
-	item.NextExecutionAt = utils.CalculateNextExecution(
+	nextExec := utils.CalculateNextExecution(
 		item.StartsAt,
 		item.Repeats,
 		item.CronExpression,
 		item.Expiration,
 	)
+	if nextExec == nil {
+		// Invalid scheduled item - cannot determine next execution time
+		// This could be due to:
+		// - Non-repeating item scheduled in the past
+		// - Repeating item without valid cron expression
+		// - Item already expired
+		// - Invalid cron expression format
+		http.Error(w, "Invalid scheduled item: cannot determine next execution time", http.StatusBadRequest)
+		return
+	}
+	
+	item.NextExecutionAt = *nextExec
 
 	createdItem := h.store.CreateScheduledItem(item)
 

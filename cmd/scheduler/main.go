@@ -81,15 +81,21 @@ func main() {
 func processScheduledItems(store store.ScheduledItemStore, logStore store.ExecutionLogStore) {
 	log.Println("Processing scheduled items...")
 
-	items := store.GetAllScheduledItems()
+	// Get items that are due for execution using the optimized query
+	// Use a reasonable limit for batch processing
+	itemsDue, err := store.GetNextScheduledItems(100, 0)
+	if err != nil {
+		log.Printf("Error getting scheduled items due for execution: %v", err)
+		return
+	}
 
-	log.Printf("Found %d scheduled items", len(items))
+	log.Printf("Found %d items due for execution", len(itemsDue))
 
-	// TODO: Add your processing logic here
-	// For now, just log the items
-	for _, item := range items {
-		log.Printf("Item: ID=%d, Title='%s', StartsAt=%v",
-			item.ID, item.Title, item.StartsAt)
+	// TODO: Process the items (create todo items, update next execution times, log execution)
+	// This will be implemented in the next chunks
+	for _, item := range itemsDue {
+		log.Printf("Processing item: ID=%d, Title='%s', NextExecutionAt=%v", 
+			item.ID, item.Title, item.NextExecutionAt)
 	}
 
 	log.Println("Finished processing scheduled items")

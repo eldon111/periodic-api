@@ -57,6 +57,21 @@ func (s *MemoryScheduledItemStore) GetAllScheduledItems() []models.ScheduledItem
 	return items
 }
 
+// UpdateNextExecutionAt updates the next execution time for a scheduled item
+func (s *MemoryScheduledItemStore) UpdateNextExecutionAt(id int64, nextExecutionAt time.Time) bool {
+	s.Lock()
+	defer s.Unlock()
+
+	item, exists := s.items[id]
+	if !exists {
+		return false
+	}
+
+	item.NextExecutionAt = nextExecutionAt
+	s.items[id] = item
+	return true
+}
+
 // DeleteScheduledItem removes a scheduled item from the in-memory store
 func (s *MemoryScheduledItemStore) DeleteScheduledItem(id int64) bool {
 	s.Lock()
@@ -75,28 +90,38 @@ func (s *MemoryScheduledItemStore) GetNextScheduledItems(limit int, offset int64
 	s.RLock()
 	defer s.RUnlock()
 
-	// Filter items that have a next execution time
-	var itemsWithNextExecution []models.ScheduledItem
+	now := time.Now()
+	
+	// Filter items that are due for execution and not expired
+	var itemsDue []models.ScheduledItem
 	for _, item := range s.items {
-		if item.NextExecutionAt != nil {
-			itemsWithNextExecution = append(itemsWithNextExecution, item)
+		// Skip items that are not yet due
+		if item.NextExecutionAt.After(now) {
+			continue
 		}
+		
+		// Skip expired items
+		if item.Expiration != nil && now.After(*item.Expiration) {
+			continue
+		}
+		
+		itemsDue = append(itemsDue, item)
 	}
 
 	// Sort by next execution time (earliest first)
-	sort.Slice(itemsWithNextExecution, func(i, j int) bool {
-		return itemsWithNextExecution[i].NextExecutionAt.Before(*itemsWithNextExecution[j].NextExecutionAt)
+	sort.Slice(itemsDue, func(i, j int) bool {
+		return itemsDue[i].NextExecutionAt.Before(itemsDue[j].NextExecutionAt)
 	})
 
 	// Apply pagination
 	startIndex := int(offset)
 	endIndex := startIndex + limit
 
-	if endIndex > len(itemsWithNextExecution) {
-		endIndex = len(itemsWithNextExecution)
+	if endIndex > len(itemsDue) {
+		endIndex = len(itemsDue)
 	}
 
-	return itemsWithNextExecution[startIndex:endIndex], nil
+	return itemsDue[startIndex:endIndex], nil
 }
 
 // AddSampleData adds sample data to the in-memory store
@@ -105,22 +130,25 @@ func (s *MemoryScheduledItemStore) AddSampleData() {
 	if len(s.GetAllScheduledItems()) == 0 {
 		startsAt1, _ := time.Parse(time.RFC3339, "2023-05-15T10:00:00Z")
 		s.CreateScheduledItem(models.ScheduledItem{
-			Title:       "Sample Scheduled Item 1",
-			Description: "Description for item 1",
-			StartsAt:    startsAt1,
-			Repeats:     false,
+			Title:           "Sample Scheduled Item 1",
+			Description:     "Description for item 1",
+			StartsAt:        startsAt1,
+			Repeats:         false,
+			NextExecutionAt: startsAt1, // One-time item, set to start time
 		})
 
 		cronExpr := "0 9 * * MON-FRI"
 		startsAt2, _ := time.Parse(time.RFC3339, "2023-05-16T14:30:00Z")
 		expirationTime, _ := time.Parse(time.RFC3339, "2023-12-31T23:59:59Z")
+		nextExec2 := time.Now().Add(time.Hour) // Set to 1 hour from now for testing
 		s.CreateScheduledItem(models.ScheduledItem{
-			Title:          "Sample Scheduled Item 2",
-			Description:    "Description for item 2",
-			StartsAt:       startsAt2,
-			Repeats:        true,
-			CronExpression: &cronExpr,
-			Expiration:     &expirationTime,
+			Title:           "Sample Scheduled Item 2",
+			Description:     "Description for item 2",
+			StartsAt:        startsAt2,
+			Repeats:         true,
+			CronExpression:  &cronExpr,
+			Expiration:      &expirationTime,
+			NextExecutionAt: nextExec2,
 		})
 	}
 }

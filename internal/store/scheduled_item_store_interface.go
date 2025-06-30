@@ -1,6 +1,7 @@
 package store
 
 import (
+	"time"
 	"periodic-api/internal/models"
 )
 
@@ -10,6 +11,7 @@ type ScheduledItemStore interface {
 	GetScheduledItem(id int64) (models.ScheduledItem, bool)
 	GetAllScheduledItems() []models.ScheduledItem
 	GetNextScheduledItems(limit int, offset int64) ([]models.ScheduledItem, error)
+	UpdateNextExecutionAt(id int64, nextExecutionAt time.Time) bool
 	DeleteScheduledItem(id int64) bool
 	AddSampleData()
 }
