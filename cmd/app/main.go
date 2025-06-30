@@ -39,6 +39,7 @@ func main() {
 	var itemStore store.ScheduledItemStore
 	var todoStore store.TodoItemStore
 	var userStore store.UserStore
+	// var executionLogStore store.ExecutionLogStore // Will be used in future chunks
 
 	// Check environment variable to determine which store to use
 	usePostgres := os.Getenv("USE_POSTGRES_DB")
@@ -82,12 +83,14 @@ func main() {
 		itemStore = store.NewPostgresScheduledItemStore(database)
 		todoStore = store.NewPostgresTodoItemStore(database)
 		userStore = store.NewPostgresUserStore(database)
+		// executionLogStore = store.NewPostgresExecutionLogStore(database) // Will be used in future chunks
 		log.Println("Using PostgreSQL database for storage")
 	} else {
 		// Create in-memory store instances
 		itemStore = store.NewMemoryScheduledItemStore()
 		todoStore = store.NewMemoryTodoItemStore()
 		userStore = store.NewMemoryUserStore()
+		// executionLogStore = store.NewMemoryExecutionLogStore() // Will be used in future chunks
 		log.Println("Using in-memory database for storage")
 	}
 

@@ -19,6 +19,7 @@ func init() {
 
 func main() {
 	var itemStore store.ScheduledItemStore
+	var executionLogStore store.ExecutionLogStore
 
 	// Check environment variable to determine which store to use
 	usePostgres := os.Getenv("USE_POSTGRES_DB")
@@ -31,12 +32,14 @@ func main() {
 		}
 		defer database.Close()
 
-		// Create PostgreSQL store instance
+		// Create PostgreSQL store instances
 		itemStore = store.NewPostgresScheduledItemStore(database)
+		executionLogStore = store.NewPostgresExecutionLogStore(database)
 		log.Println("Scheduler using PostgreSQL database for storage")
 	} else {
-		// Create in-memory store instance
+		// Create in-memory store instances
 		itemStore = store.NewMemoryScheduledItemStore()
+		executionLogStore = store.NewMemoryExecutionLogStore()
 		log.Println("Scheduler using in-memory database for storage")
 	}
 
@@ -61,13 +64,13 @@ func main() {
 	defer ticker.Stop()
 
 	// Run initial check
-	processScheduledItems(itemStore)
+	processScheduledItems(itemStore, executionLogStore)
 
 	// Main service loop
 	for {
 		select {
 		case <-ticker.C:
-			processScheduledItems(itemStore)
+			processScheduledItems(itemStore, executionLogStore)
 		case <-sigChan:
 			log.Println("Received shutdown signal, stopping scheduler...")
 			return
@@ -75,7 +78,7 @@ func main() {
 	}
 }
 
-func processScheduledItems(store store.ScheduledItemStore) {
+func processScheduledItems(store store.ScheduledItemStore, logStore store.ExecutionLogStore) {
 	log.Println("Processing scheduled items...")
 
 	items := store.GetAllScheduledItems()
