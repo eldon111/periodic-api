@@ -24,7 +24,8 @@
       "Bash(go mod:*)",
       "WebFetch(domain:docs.anthropic.com)",
       "Bash(gh issue view:*)",
-      "Bash(swag init:*)"
+      "Bash(swag init:*)",
+      "Bash(gh issue create:*)"
     ],
     "deny": []
   }

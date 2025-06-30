@@ -85,7 +85,7 @@ func processScheduledItems(store store.ScheduledItemStore) {
 	// TODO: Add your processing logic here
 	// For now, just log the items
 	for _, item := range items {
-		log.Printf("Item: ID=%d, Title='%s', StartsAt=%v", 
+		log.Printf("Item: ID=%d, Title='%s', StartsAt=%v",
 			item.ID, item.Title, item.StartsAt)
 	}
 
