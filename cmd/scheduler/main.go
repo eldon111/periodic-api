@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"periodic-api/internal/db"
+	"periodic-api/internal/models"
 	"periodic-api/internal/store"
 )
 
@@ -19,6 +21,7 @@ func init() {
 
 func main() {
 	var itemStore store.ScheduledItemStore
+	var todoStore store.TodoItemStore
 	var executionLogStore store.ExecutionLogStore
 
 	// Check environment variable to determine which store to use
@@ -34,11 +37,13 @@ func main() {
 
 		// Create PostgreSQL store instances
 		itemStore = store.NewPostgresScheduledItemStore(database)
+		todoStore = store.NewPostgresTodoItemStore(database)
 		executionLogStore = store.NewPostgresExecutionLogStore(database)
 		log.Println("Scheduler using PostgreSQL database for storage")
 	} else {
 		// Create in-memory store instances
 		itemStore = store.NewMemoryScheduledItemStore()
+		todoStore = store.NewMemoryTodoItemStore()
 		executionLogStore = store.NewMemoryExecutionLogStore()
 		log.Println("Scheduler using in-memory database for storage")
 	}
@@ -64,13 +69,13 @@ func main() {
 	defer ticker.Stop()
 
 	// Run initial check
-	processScheduledItems(itemStore, executionLogStore)
+	processScheduledItems(itemStore, todoStore, executionLogStore)
 
 	// Main service loop
 	for {
 		select {
 		case <-ticker.C:
-			processScheduledItems(itemStore, executionLogStore)
+			processScheduledItems(itemStore, todoStore, executionLogStore)
 		case <-sigChan:
 			log.Println("Received shutdown signal, stopping scheduler...")
 			return
@@ -78,7 +83,7 @@ func main() {
 	}
 }
 
-func processScheduledItems(store store.ScheduledItemStore, logStore store.ExecutionLogStore) {
+func processScheduledItems(store store.ScheduledItemStore, todoStore store.TodoItemStore, logStore store.ExecutionLogStore) {
 	log.Println("Processing scheduled items...")
 
 	// Get items that are due for execution using the optimized query
@@ -91,12 +96,48 @@ func processScheduledItems(store store.ScheduledItemStore, logStore store.Execut
 
 	log.Printf("Found %d items due for execution", len(itemsDue))
 
-	// TODO: Process the items (create todo items, update next execution times, log execution)
-	// This will be implemented in the next chunks
+	// Process each item due for execution
+	var successCount, errorCount int
 	for _, item := range itemsDue {
 		log.Printf("Processing item: ID=%d, Title='%s', NextExecutionAt=%v", 
 			item.ID, item.Title, item.NextExecutionAt)
+
+		// Create todo item from scheduled item
+		todoText := createTodoText(item)
+		todoItem := models.TodoItem{
+			Text:    todoText,
+			Checked: false,
+		}
+
+		createdTodo := todoStore.CreateTodoItem(todoItem)
+		if createdTodo.ID > 0 {
+			successCount++
+			log.Printf("Created todo item ID=%d: '%s' for scheduled item ID=%d", 
+				createdTodo.ID, createdTodo.Text, item.ID)
+		} else {
+			errorCount++
+			log.Printf("Failed to create todo item for scheduled item ID=%d", item.ID)
+		}
+
+		// TODO: Update next execution time and log execution (next chunks)
+	}
+
+	if successCount > 0 || errorCount > 0 {
+		log.Printf("Processed %d items: %d successful, %d errors", 
+			len(itemsDue), successCount, errorCount)
 	}
 
 	log.Println("Finished processing scheduled items")
+}
+
+// createTodoText generates a descriptive todo item text from a scheduled item
+func createTodoText(item models.ScheduledItem) string {
+	// Create a meaningful todo text based on the scheduled item
+	if item.Description != "" {
+		// If there's a description, use both title and description
+		return fmt.Sprintf("%s - %s", item.Title, item.Description)
+	}
+	
+	// If no description, just use the title
+	return item.Title
 }
