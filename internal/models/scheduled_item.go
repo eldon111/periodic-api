@@ -13,5 +13,5 @@ type ScheduledItem struct {
 	Repeats         bool       `json:"repeats" example:"true"`
 	CronExpression  *string    `json:"cronExpression,omitempty" example:"0 9 * * 1-5"`
 	Expiration      *time.Time `json:"expiration,omitempty" example:"2024-12-31T23:59:59Z"`
-	NextExecutionAt *time.Time `json:"nextExecutionAt,omitempty" example:"2024-01-02T09:00:00Z"`
+	NextExecutionAt time.Time  `json:"nextExecutionAt" example:"2024-01-02T09:00:00Z"`
 }

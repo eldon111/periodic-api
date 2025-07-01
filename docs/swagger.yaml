@@ -36,12 +36,32 @@ definitions:
         example: Daily standup meeting
         type: string
     type: object
+  periodic-api_internal_models.TodoItem:
+    properties:
+      checked:
+        type: boolean
+      id:
+        type: integer
+      text:
+        type: string
+    type: object
+  periodic-api_internal_models.User:
+    properties:
+      id:
+        type: integer
+      passwordHash:
+        items:
+          type: integer
+        type: array
+      username:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
-    email: support@example.com
+    email: eldon+periodic@emathias.com
     name: API Support
-  description: A REST API server for managing scheduled items with support for PostgreSQL
+  description: A REST API server for managing Periodic items with support for PostgreSQL
     and in-memory storage.
   license:
     name: MIT
@@ -198,4 +218,250 @@ paths:
       summary: Get next scheduled items
       tags:
       - scheduled-items
+  /todo-items:
+    get:
+      description: Retrieve all todo items from the store
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/periodic-api_internal_models.TodoItem'
+            type: array
+      summary: Get all todo items
+      tags:
+      - todo-items
+    post:
+      consumes:
+      - application/json
+      description: Create a new todo item with the given details
+      parameters:
+      - description: Todo item to create
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/periodic-api_internal_models.TodoItem'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/periodic-api_internal_models.TodoItem'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+      summary: Create a todo item
+      tags:
+      - todo-items
+  /todo-items/{id}:
+    delete:
+      description: Delete a todo item by its ID
+      parameters:
+      - description: Todo item ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No content
+        "400":
+          description: Invalid ID
+          schema:
+            type: string
+        "404":
+          description: Todo item not found
+          schema:
+            type: string
+      summary: Delete a todo item
+      tags:
+      - todo-items
+    get:
+      description: Get a specific todo item by its ID
+      parameters:
+      - description: Todo item ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/periodic-api_internal_models.TodoItem'
+        "400":
+          description: Invalid ID
+          schema:
+            type: string
+        "404":
+          description: Todo item not found
+          schema:
+            type: string
+      summary: Get a todo item by ID
+      tags:
+      - todo-items
+    put:
+      consumes:
+      - application/json
+      description: Update a todo item by its ID
+      parameters:
+      - description: Todo item ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated todo item
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/periodic-api_internal_models.TodoItem'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/periodic-api_internal_models.TodoItem'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "404":
+          description: Todo item not found
+          schema:
+            type: string
+      summary: Update a todo item
+      tags:
+      - todo-items
+  /users:
+    get:
+      description: Retrieve all users from the store
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/periodic-api_internal_models.User'
+            type: array
+      summary: Get all users
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Create a new user with the given details
+      parameters:
+      - description: User to create
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/periodic-api_internal_models.User'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/periodic-api_internal_models.User'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+      summary: Create a user
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      description: Delete a user by their ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No content
+        "400":
+          description: Invalid ID
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+      summary: Delete a user
+      tags:
+      - users
+    get:
+      description: Get a specific user by their ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/periodic-api_internal_models.User'
+        "400":
+          description: Invalid ID
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+      summary: Get a user by ID
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Update a user by their ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated user data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/periodic-api_internal_models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/periodic-api_internal_models.User'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+      summary: Update a user
+      tags:
+      - users
 swagger: "2.0"

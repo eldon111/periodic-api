@@ -4,3 +4,8 @@
 
 # AWS credentials - do not commit
 aws_config.json
+
+# Executables
+/app
+/scheduler
+/migrate

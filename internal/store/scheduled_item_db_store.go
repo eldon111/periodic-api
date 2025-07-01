@@ -1,9 +1,9 @@
 package store
 
 import (
-	"periodic-api/internal/models"
 	"database/sql"
 	"log"
+	"periodic-api/internal/models"
 	"sync"
 	"time"
 )
@@ -66,7 +66,6 @@ func (s *PostgresScheduledItemStore) GetScheduledItem(id int64) (models.Schedule
 
 	var cronExpression sql.NullString
 	var expiration sql.NullTime
-	var nextExecutionAt sql.NullTime
 
 	err := s.db.QueryRow(query, id).Scan(
 		&item.ID,
@@ -76,7 +75,7 @@ func (s *PostgresScheduledItemStore) GetScheduledItem(id int64) (models.Schedule
 		&item.Repeats,
 		&cronExpression,
 		&expiration,
-		&nextExecutionAt,
+		&item.NextExecutionAt,
 	)
 
 	if err != nil {
@@ -93,9 +92,6 @@ func (s *PostgresScheduledItemStore) GetScheduledItem(id int64) (models.Schedule
 	}
 	if expiration.Valid {
 		item.Expiration = &expiration.Time
-	}
-	if nextExecutionAt.Valid {
-		item.NextExecutionAt = &nextExecutionAt.Time
 	}
 
 	return item, true
@@ -123,7 +119,6 @@ func (s *PostgresScheduledItemStore) GetAllScheduledItems() []models.ScheduledIt
 		var item models.ScheduledItem
 		var cronExpression sql.NullString
 		var expiration sql.NullTime
-		var nextExecutionAt sql.NullTime
 
 		err := rows.Scan(
 			&item.ID,
@@ -133,7 +128,7 @@ func (s *PostgresScheduledItemStore) GetAllScheduledItems() []models.ScheduledIt
 			&item.Repeats,
 			&cronExpression,
 			&expiration,
-			&nextExecutionAt,
+			&item.NextExecutionAt,
 		)
 
 		if err != nil {
@@ -148,9 +143,6 @@ func (s *PostgresScheduledItemStore) GetAllScheduledItems() []models.ScheduledIt
 		if expiration.Valid {
 			item.Expiration = &expiration.Time
 		}
-		if nextExecutionAt.Valid {
-			item.NextExecutionAt = &nextExecutionAt.Time
-		}
 
 		items = append(items, item)
 	}
@@ -160,6 +152,28 @@ func (s *PostgresScheduledItemStore) GetAllScheduledItems() []models.ScheduledIt
 	}
 
 	return items
+}
+
+// UpdateNextExecutionAt updates the next execution time for a scheduled item
+func (s *PostgresScheduledItemStore) UpdateNextExecutionAt(id int64, nextExecutionAt time.Time) bool {
+	s.Lock()
+	defer s.Unlock()
+
+	query := `UPDATE scheduled_items SET next_execution_at = $1 WHERE id = $2`
+
+	result, err := s.db.Exec(query, nextExecutionAt, id)
+	if err != nil {
+		log.Printf("Error updating next execution time: %v", err)
+		return false
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Printf("Error getting rows affected: %v", err)
+		return false
+	}
+
+	return rowsAffected > 0
 }
 
 // DeleteScheduledItem removes a scheduled item from the database
@@ -194,6 +208,7 @@ func (s *PostgresScheduledItemStore) GetNextScheduledItems(limit int, offset int
 		SELECT id, title, description, starts_at, repeats, cron_expression, expiration, next_execution_at 
 		FROM scheduled_items 
 		WHERE next_execution_at <= $1 
+		  AND (expiration IS NULL OR expiration > $1)
 		ORDER BY next_execution_at 
 		LIMIT $2 OFFSET $3
 	`
@@ -209,7 +224,6 @@ func (s *PostgresScheduledItemStore) GetNextScheduledItems(limit int, offset int
 		var item models.ScheduledItem
 		var cronExpression sql.NullString
 		var expiration sql.NullTime
-		var nextExecutionAt sql.NullTime
 
 		err := rows.Scan(
 			&item.ID,
@@ -219,7 +233,7 @@ func (s *PostgresScheduledItemStore) GetNextScheduledItems(limit int, offset int
 			&item.Repeats,
 			&cronExpression,
 			&expiration,
-			&nextExecutionAt,
+			&item.NextExecutionAt,
 		)
 
 		if err != nil {
@@ -232,9 +246,6 @@ func (s *PostgresScheduledItemStore) GetNextScheduledItems(limit int, offset int
 		}
 		if expiration.Valid {
 			item.Expiration = &expiration.Time
-		}
-		if nextExecutionAt.Valid {
-			item.NextExecutionAt = &nextExecutionAt.Time
 		}
 
 		items = append(items, item)

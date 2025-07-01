@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,6 +23,12 @@ var TestDB *sql.DB
 
 // TestContainerDB holds the connection to the testcontainer database
 var TestContainerDB *sql.DB
+
+func init() {
+	// Set the application's default timezone to UTC
+	time.Local = time.UTC
+	log.Printf("default time set to UTC")
+}
 
 // TestMain sets up the test database and runs all tests
 func TestMain(m *testing.M) {
@@ -97,32 +104,114 @@ func setupTestDB() (*sql.DB, error) {
 	return db, nil
 }
 
-// createAllTables creates all required tables for testing by reading from db_init.sql
+// createAllTables creates all required tables for testing by running migrations
+// This ensures test database schema matches the actual application schema
 func createAllTables(db *sql.DB) error {
-	// Get the path to db_init.sql relative to the project root
+	// Get the path to migrations directory relative to the project root
 	// Go up from test/integration to project root
 	projectRoot := filepath.Join("..", "..")
-	sqlFilePath := filepath.Join(projectRoot, "db_init.sql")
+	migrationsPath := filepath.Join(projectRoot, "migrations")
 
-	// Open and read the SQL file
-	file, err := os.Open(sqlFilePath)
+	// Run migrations to create the database schema
+	// This replaces the old approach of using db_init.sql to ensure
+	// tests always use the current, up-to-date schema
+	err := runMigrations(db, migrationsPath)
 	if err != nil {
-		return fmt.Errorf("failed to open db_init.sql: %w", err)
-	}
-	defer file.Close()
-
-	sqlBytes, err := io.ReadAll(file)
-	if err != nil {
-		return fmt.Errorf("failed to read db_init.sql: %w", err)
-	}
-
-	// Execute the SQL from the file
-	_, err = db.Exec(string(sqlBytes))
-	if err != nil {
-		return fmt.Errorf("failed to execute db_init.sql: %w", err)
+		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	return nil
+}
+
+// runMigrations executes all .up.sql migration files in order
+func runMigrations(db *sql.DB, migrationsPath string) error {
+	// First, create the schema_migrations table if it doesn't exist
+	createMigrationsTableSQL := `
+		CREATE TABLE IF NOT EXISTS schema_migrations (
+			version BIGINT PRIMARY KEY,
+			dirty BOOLEAN NOT NULL DEFAULT FALSE
+		);
+	`
+	_, err := db.Exec(createMigrationsTableSQL)
+	if err != nil {
+		return fmt.Errorf("failed to create schema_migrations table: %w", err)
+	}
+
+	// Read migration files
+	files, err := os.ReadDir(migrationsPath)
+	if err != nil {
+		return fmt.Errorf("failed to read migrations directory: %w", err)
+	}
+
+	// Filter and sort .up.sql files
+	var upFiles []string
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), ".up.sql") {
+			upFiles = append(upFiles, file.Name())
+		}
+	}
+	sort.Strings(upFiles)
+
+	// Execute each migration file
+	for _, fileName := range upFiles {
+		// Extract version number from filename (e.g., "000001_initial_schema.up.sql" -> 1)
+		version := extractVersionFromFilename(fileName)
+
+		// Check if this migration has already been applied
+		var count int
+		err := db.QueryRow("SELECT COUNT(*) FROM schema_migrations WHERE version = $1", version).Scan(&count)
+		if err != nil {
+			return fmt.Errorf("failed to check migration status for version %d: %w", version, err)
+		}
+
+		if count > 0 {
+			log.Printf("Migration %s already applied, skipping", fileName)
+			continue
+		}
+
+		// Read and execute the migration file
+		filePath := filepath.Join(migrationsPath, fileName)
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			return fmt.Errorf("failed to read migration file %s: %w", fileName, err)
+		}
+
+		// Execute the SQL
+		_, err = db.Exec(string(content))
+		if err != nil {
+			return fmt.Errorf("failed to execute migration %s: %w", fileName, err)
+		}
+
+		// Record that this migration has been applied
+		_, err = db.Exec("INSERT INTO schema_migrations (version, dirty) VALUES ($1, FALSE)", version)
+		if err != nil {
+			return fmt.Errorf("failed to record migration %s: %w", fileName, err)
+		}
+
+		log.Printf("Applied migration: %s", fileName)
+	}
+
+	return nil
+}
+
+// extractVersionFromFilename extracts the version number from a migration filename
+func extractVersionFromFilename(filename string) int64 {
+	// Migration files are named like "000001_description.up.sql"
+	parts := strings.Split(filename, "_")
+	if len(parts) == 0 {
+		return 0
+	}
+
+	versionStr := parts[0]
+	// Convert version string to int64 (e.g., "000001" -> 1)
+	var version int64
+	for _, char := range versionStr {
+		if char >= '0' && char <= '9' {
+			version = version*10 + int64(char-'0')
+		}
+	}
+
+	return version
 }
 
 // getEnvOrDefault returns the environment variable value or a default value
