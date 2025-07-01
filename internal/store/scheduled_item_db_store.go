@@ -258,38 +258,3 @@ func (s *PostgresScheduledItemStore) GetNextScheduledItems(limit int, offset int
 	return items, nil
 }
 
-// AddSampleData adds sample data to the database if it's empty
-func (s *PostgresScheduledItemStore) AddSampleData() {
-	count := 0
-	err := s.db.QueryRow("SELECT COUNT(*) FROM scheduled_items").Scan(&count)
-	if err != nil {
-		log.Printf("Error checking for existing data: %v", err)
-		return
-	}
-
-	// Add sample data if the table is empty
-	if count == 0 {
-		log.Println("Adding sample data...")
-
-		// Add some sample data
-		startsAt1, _ := time.Parse(time.RFC3339, "2023-05-15T10:00:00Z")
-		s.CreateScheduledItem(models.ScheduledItem{
-			Title:       "Sample Scheduled Item 1",
-			Description: "Description for item 1",
-			StartsAt:    startsAt1,
-			Repeats:     false,
-		})
-
-		cronExpr := "0 0 9 * * MON-FRI"
-		startsAt2, _ := time.Parse(time.RFC3339, "2023-05-16T14:30:00Z")
-		expirationTime, _ := time.Parse(time.RFC3339, "2023-12-31T23:59:59Z")
-		s.CreateScheduledItem(models.ScheduledItem{
-			Title:          "Sample Scheduled Item 2",
-			Description:    "Description for item 2",
-			StartsAt:       startsAt2,
-			Repeats:        true,
-			CronExpression: &cronExpr,
-			Expiration:     &expirationTime,
-		})
-	}
-}

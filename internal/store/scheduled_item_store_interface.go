@@ -13,5 +13,4 @@ type ScheduledItemStore interface {
 	GetNextScheduledItems(limit int, offset int64) ([]models.ScheduledItem, error)
 	UpdateNextExecutionAt(id int64, nextExecutionAt time.Time) bool
 	DeleteScheduledItem(id int64) bool
-	AddSampleData()
 }

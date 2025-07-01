@@ -124,31 +124,3 @@ func (s *MemoryScheduledItemStore) GetNextScheduledItems(limit int, offset int64
 	return itemsDue[startIndex:endIndex], nil
 }
 
-// AddSampleData adds sample data to the in-memory store
-func (s *MemoryScheduledItemStore) AddSampleData() {
-	// Only add sample data if the store is empty
-	if len(s.GetAllScheduledItems()) == 0 {
-		startsAt1, _ := time.Parse(time.RFC3339, "2023-05-15T10:00:00Z")
-		s.CreateScheduledItem(models.ScheduledItem{
-			Title:           "Sample Scheduled Item 1",
-			Description:     "Description for item 1",
-			StartsAt:        startsAt1,
-			Repeats:         false,
-			NextExecutionAt: startsAt1, // One-time item, set to start time
-		})
-
-		cronExpr := "0 9 * * MON-FRI"
-		startsAt2, _ := time.Parse(time.RFC3339, "2023-05-16T14:30:00Z")
-		expirationTime, _ := time.Parse(time.RFC3339, "2023-12-31T23:59:59Z")
-		nextExec2 := time.Now().Add(time.Hour) // Set to 1 hour from now for testing
-		s.CreateScheduledItem(models.ScheduledItem{
-			Title:           "Sample Scheduled Item 2",
-			Description:     "Description for item 2",
-			StartsAt:        startsAt2,
-			Repeats:         true,
-			CronExpression:  &cronExpr,
-			Expiration:      &expirationTime,
-			NextExecutionAt: nextExec2,
-		})
-	}
-}

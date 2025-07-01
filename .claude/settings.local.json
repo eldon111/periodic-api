@@ -1,6 +1,5 @@
 {
   "includeCoAuthoredBy": false,
-  "replace_all": true,
   "permissions": {
     "allow": [
       "Bash(go get:*)",
@@ -28,8 +27,11 @@
       "Bash(swag init:*)",
       "Bash(gh issue create:*)",
       "Bash(git checkout:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(gh issue list:*)",
+      "Bash(git stash push:*)"
     ],
     "deny": []
-  }
+  },
+  "replace_all": true
 }
