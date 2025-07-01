@@ -12,6 +12,7 @@ import (
 	"periodic-api/internal/db"
 	"periodic-api/internal/models"
 	"periodic-api/internal/store"
+	"periodic-api/internal/utils"
 )
 
 func init() {
@@ -99,7 +100,7 @@ func processScheduledItems(store store.ScheduledItemStore, todoStore store.TodoI
 	// Process each item due for execution
 	var successCount, errorCount int
 	for _, item := range itemsDue {
-		log.Printf("Processing item: ID=%d, Title='%s', NextExecutionAt=%v", 
+		log.Printf("Processing item: ID=%d, Title='%s', NextExecutionAt=%v",
 			item.ID, item.Title, item.NextExecutionAt)
 
 		// Create todo item from scheduled item
@@ -112,18 +113,21 @@ func processScheduledItems(store store.ScheduledItemStore, todoStore store.TodoI
 		createdTodo := todoStore.CreateTodoItem(todoItem)
 		if createdTodo.ID > 0 {
 			successCount++
-			log.Printf("Created todo item ID=%d: '%s' for scheduled item ID=%d", 
+			log.Printf("Created todo item ID=%d: '%s' for scheduled item ID=%d",
 				createdTodo.ID, createdTodo.Text, item.ID)
+
+			// Update next execution time after successful todo creation
+			updateProcessedScheduledItem(store, item)
 		} else {
 			errorCount++
 			log.Printf("Failed to create todo item for scheduled item ID=%d", item.ID)
 		}
 
-		// TODO: Update next execution time and log execution (next chunks)
+		// TODO: Log execution (next chunk)
 	}
 
 	if successCount > 0 || errorCount > 0 {
-		log.Printf("Processed %d items: %d successful, %d errors", 
+		log.Printf("Processed %d items: %d successful, %d errors",
 			len(itemsDue), successCount, errorCount)
 	}
 
@@ -137,7 +141,36 @@ func createTodoText(item models.ScheduledItem) string {
 		// If there's a description, use both title and description
 		return fmt.Sprintf("%s - %s", item.Title, item.Description)
 	}
-	
+
 	// If no description, just use the title
 	return item.Title
+}
+
+// updateProcessedScheduledItem calculates and updates the next execution time for a scheduled item
+func updateProcessedScheduledItem(store store.ScheduledItemStore, item models.ScheduledItem) {
+	if !item.Repeats {
+		if store.DeleteScheduledItem(item.ID) {
+			log.Printf("Deleted completed non-repeating item ID=%d", item.ID)
+		} else {
+			log.Printf("Failed to delete completed item ID=%d", item.ID)
+		}
+	}
+
+	// For repeating items, calculate the next execution based on cron expression
+	nextExec := utils.CalculateNextExecution(item.StartsAt, item.Repeats, item.CronExpression, item.Expiration)
+	if nextExec != nil {
+		success := store.UpdateNextExecutionAt(item.ID, *nextExec)
+		if success {
+			log.Printf("Updated next execution for repeating item ID=%d to %v", item.ID, *nextExec)
+		} else {
+			log.Printf("Failed to update next execution for item ID=%d", item.ID)
+		}
+	} else {
+		// Repeating item has expired or no valid next execution
+		if store.DeleteScheduledItem(item.ID) {
+			log.Printf("Deleted expired repeating item ID=%d", item.ID)
+		} else {
+			log.Printf("Failed to delete expired item ID=%d", item.ID)
+		}
+	}
 }
