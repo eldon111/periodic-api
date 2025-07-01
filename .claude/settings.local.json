@@ -1,5 +1,6 @@
 {
   "includeCoAuthoredBy": false,
+  "replace_all": true,
   "permissions": {
     "allow": [
       "Bash(go get:*)",
@@ -25,7 +26,9 @@
       "WebFetch(domain:docs.anthropic.com)",
       "Bash(gh issue view:*)",
       "Bash(swag init:*)",
-      "Bash(gh issue create:*)"
+      "Bash(gh issue create:*)",
+      "Bash(git checkout:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }

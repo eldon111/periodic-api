@@ -1,9 +1,9 @@
 package store
 
 import (
-	"periodic-api/internal/models"
 	"database/sql"
 	"log"
+	"periodic-api/internal/models"
 	"sync"
 	"time"
 )
@@ -119,7 +119,7 @@ func (s *PostgresScheduledItemStore) GetAllScheduledItems() []models.ScheduledIt
 		var item models.ScheduledItem
 		var cronExpression sql.NullString
 		var expiration sql.NullTime
-	
+
 		err := rows.Scan(
 			&item.ID,
 			&item.Title,
@@ -224,7 +224,7 @@ func (s *PostgresScheduledItemStore) GetNextScheduledItems(limit int, offset int
 		var item models.ScheduledItem
 		var cronExpression sql.NullString
 		var expiration sql.NullTime
-	
+
 		err := rows.Scan(
 			&item.ID,
 			&item.Title,
