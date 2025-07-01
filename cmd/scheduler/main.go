@@ -95,6 +95,12 @@ func processScheduledItems(store store.ScheduledItemStore, todoStore store.TodoI
 		return
 	}
 
+	// Early return if no items to process
+	if len(itemsDue) == 0 {
+		log.Println("No items due for execution")
+		return
+	}
+
 	log.Printf("Found %d items due for execution", len(itemsDue))
 
 	// Process each item due for execution
@@ -118,12 +124,17 @@ func processScheduledItems(store store.ScheduledItemStore, todoStore store.TodoI
 
 			// Update next execution time after successful todo creation
 			updateProcessedScheduledItem(store, item)
+
+			// Log successful execution
+			logExecution(logStore, item.ID, "success", nil, &createdTodo.ID)
 		} else {
 			errorCount++
-			log.Printf("Failed to create todo item for scheduled item ID=%d", item.ID)
-		}
+			errorMsg := "Failed to create todo item"
+			log.Printf("%s for scheduled item ID=%d", errorMsg, item.ID)
 
-		// TODO: Log execution (next chunk)
+			// Log failed execution
+			logExecution(logStore, item.ID, "error", &errorMsg, nil)
+		}
 	}
 
 	if successCount > 0 || errorCount > 0 {
@@ -172,5 +183,43 @@ func updateProcessedScheduledItem(store store.ScheduledItemStore, item models.Sc
 		} else {
 			log.Printf("Failed to delete expired item ID=%d", item.ID)
 		}
+	}
+}
+
+// logExecution creates an execution log entry for a scheduled item processing attempt
+func logExecution(logStore store.ExecutionLogStore, scheduledItemID int64, status string, errorMessage *string, todoItemID *int64) {
+	// Validate input parameters
+	if scheduledItemID <= 0 {
+		log.Printf("Invalid scheduled item ID for execution log: %d", scheduledItemID)
+		return
+	}
+
+	if status != "success" && status != "error" && status != "skipped" {
+		log.Printf("Invalid status for execution log: %s", status)
+		return
+	}
+
+	executionLog := models.ExecutionLog{
+		ScheduledItemID: scheduledItemID,
+		ExecutedAt:      time.Now(),
+		Status:          status,
+		ErrorMessage:    errorMessage,
+		TodoItemID:      todoItemID,
+	}
+
+	createdLog := logStore.CreateExecutionLog(executionLog)
+	if createdLog.ID > 0 {
+		if status == "success" && todoItemID != nil {
+			log.Printf("Logged successful execution: log ID=%d, scheduled item ID=%d, todo item ID=%d",
+				createdLog.ID, scheduledItemID, *todoItemID)
+		} else if status == "error" && errorMessage != nil {
+			log.Printf("Logged failed execution: log ID=%d, scheduled item ID=%d, error: %s",
+				createdLog.ID, scheduledItemID, *errorMessage)
+		} else {
+			log.Printf("Logged execution: log ID=%d, scheduled item ID=%d, status: %s",
+				createdLog.ID, scheduledItemID, status)
+		}
+	} else {
+		log.Printf("Failed to create execution log for scheduled item ID=%d", scheduledItemID)
 	}
 }
